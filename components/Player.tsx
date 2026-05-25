@@ -3,7 +3,7 @@ import React, { useRef, forwardRef, useImperativeHandle, useMemo, useEffect, use
 import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3, Group, Mesh, MathUtils, Object3D, InstancedMesh, DynamicDrawUsage, Color } from 'three';
 import { WORLD_CONFIG } from '../types';
-import { getTerrainHeight, getObstacleAt, getRiverInfo, getCloudInfo, getBridgeInfo } from '../services/mathService';
+import { getTerrainHeight, getObstacleAt, getCloudInfo, getBridgeInfo } from '../services/mathService';
 import { useGameStore } from '../store';
 import { audioService } from '../services/audioService';
 
@@ -100,16 +100,15 @@ export const Player: React.FC = () => {
   const splashRef = useRef<SplashHandle>(null);
   const debrisRef = useRef<DebrisHandle>(null);
   
-  const wasAboveWater = useRef(true);
   const lastHitKey = useRef<string>("");
   const smoothedCameraY = useRef(5);
   const shakeIntensity = useRef(0);
   const lastMilestone = useRef(0);
   const currentLookOffset = useRef(new Vector3(0, 0, 0));
-  const stepTimer = useRef(0);
 
   const { camera } = useThree();
   const isPlaying = useGameStore(state => state.isPlaying);
+  const isGameOver = useGameStore(state => state.isGameOver);
   const incrementScore = useGameStore(state => state.incrementScore);
   const addCoins = useGameStore(state => state.addCoins); 
   const removeCoins = useGameStore(state => state.removeCoins); 
@@ -139,13 +138,11 @@ export const Player: React.FC = () => {
         velocity.current.set(0, 0, 0); 
         isGrounded.current = false; 
         wasGrounded.current = false;
-        lastHitKey.current = ""; 
-        lastMilestone.current = 0; 
-        wasAboveWater.current = true; 
-        smoothedCameraY.current = 5; 
-        shakeIntensity.current = 0; 
+        lastHitKey.current = "";
+        lastMilestone.current = 0;
+        smoothedCameraY.current = 5;
+        shakeIntensity.current = 0;
         currentLookOffset.current.set(0, 0, 0);
-        stepTimer.current = 0;
         
         if (groupRef.current) { 
             groupRef.current.position.set(0, 5, 0); 
@@ -157,6 +154,14 @@ export const Player: React.FC = () => {
         
         prevResetTrigger.current = resetTrigger;
         return; // Skip physics frame
+    }
+
+    // 게임 오버 시 배 가라앉기 애니메이션
+    if (isGameOver && groupRef.current) {
+      groupRef.current.position.y -= delta * 2.5;
+      groupRef.current.rotation.z = MathUtils.lerp(groupRef.current.rotation.z, 0.5, delta * 1.5);
+      groupRef.current.rotation.x = MathUtils.lerp(groupRef.current.rotation.x, 0.3, delta * 1.0);
+      return;
     }
 
     if (!isPlaying || !groupRef.current) return;
@@ -185,35 +190,11 @@ export const Player: React.FC = () => {
     const terrainHeight = getTerrainHeight(position.current.x, position.current.z);
     
     const bridgeInfo = getBridgeInfo(position.current.x, position.current.z);
-    const riverInfo = getRiverInfo(position.current.z);
-    const WATER_LEVEL = -0.5;
-    
-    if (riverInfo.isRiver && !bridgeInfo.isBridge) {
-        if (wasAboveWater.current && position.current.y <= WATER_LEVEL + 0.2) {
-            splashRef.current?.explode(position.current.x, position.current.z);
-            wasAboveWater.current = false;
-            audioService.playSplash();
-        }
-    }
-    if (position.current.y > WATER_LEVEL + 0.5) {
-        wasAboveWater.current = true;
-    }
 
     let platformHeight = -Infinity;
 
     if (bridgeInfo.isBridge) {
         platformHeight = Math.max(platformHeight, bridgeInfo.height);
-        if (isGrounded.current && velocity.current.z > 1) {
-            const runFreq = 8 + (Math.min(speed, 40) * 0.5); 
-            const stepInterval = 1 / (runFreq * 2); 
-            stepTimer.current += delta;
-            if (stepTimer.current >= stepInterval) {
-                stepTimer.current = 0;
-                audioService.playWoodStep();
-            }
-        }
-    } else {
-        stepTimer.current = 0; 
     }
 
     const cloudInfo = getCloudInfo(position.current.x, position.current.z);
