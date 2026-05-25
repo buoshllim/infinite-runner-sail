@@ -219,25 +219,25 @@ export const Player: React.FC = () => {
       const dist = Math.sqrt(dx * dx + dz * dz);
       let hitRadius = 1.0;
       let isLarge = false;
+      if (obsType === 'reef') hitRadius = 1.0;
+      if (obsType === 'coral') hitRadius = 0.6;
+      if (obsType === 'debris' || obsType === 'driftwood') hitRadius = 0.5;
       if (obsType === 'rock') hitRadius = 0.7;
-      if (obsType === 'log') hitRadius = 0.5;
       if (obsType.startsWith('structure')) { hitRadius = 2.5; isLarge = true; }
-      if (obsType === 'tall_tree' || obsType === 'tall_rock') { hitRadius = 2.0; isLarge = true; }
+      if (obsType === 'tall_coral' || obsType === 'tall_rock') { hitRadius = 2.0; isLarge = true; }
 
       if (dist < hitRadius) {
          const obsBaseY = getTerrainHeight(gridX, gridZ);
-         let obsHeight = 0; let obsColor = "#5d4037"; 
-         if (obsType === 'tree_pine') { obsHeight = 4.5; obsColor = "#3e2723"; }
-         else if (obsType === 'tree_oak') { obsHeight = 4; obsColor = "#5d4037"; }
-         else if (obsType === 'tree_round') { obsHeight = 4; obsColor = "#5d4037"; }
-         else if (obsType === 'tall_tree') { obsHeight = 15; obsColor = "#4e342e"; }
-         else if (obsType === 'tall_rock') { obsHeight = 12; obsColor = "#57534e"; }
-         else if (obsType === 'structure_cabin') { obsHeight = 7; obsColor = "#78350f"; }
-         else if (obsType === 'structure_car') { obsHeight = 2.5; obsColor = "#9a3412"; }
-         else if (obsType === 'structure_plane') { obsHeight = 6; obsColor = "#cbd5e1"; }
-         else if (obsType === 'structure_heli') { obsHeight = 4; obsColor = "#3f6212"; }
-         else if (obsType === 'rock') { obsHeight = 1.0; obsColor = "#78716c"; }
-         else if (obsType === 'log') { obsHeight = 0.5; obsColor = "#4a3728"; }
+         let obsHeight = 0; let obsColor = "#57534e";
+         if (obsType === 'coral') { obsHeight = 2.5; obsColor = "#f97316"; }
+         else if (obsType === 'reef') { obsHeight = 1.5; obsColor = "#44403c"; }
+         else if (obsType === 'tall_coral') { obsHeight = 2.5; obsColor = "#fb923c"; }
+         else if (obsType === 'tall_rock') { obsHeight = 2.5; obsColor = "#57534e"; }
+         else if (obsType === 'structure_shipwreck') { obsHeight = 6; obsColor = "#92400e"; }
+         else if (obsType === 'structure_lighthouse') { obsHeight = 12; obsColor = "#f8fafc"; }
+         else if (obsType === 'structure_fort') { obsHeight = 8; obsColor = "#57534e"; }
+         else if (obsType === 'debris' || obsType === 'driftwood') { obsHeight = 0.5; obsColor = "#78350f"; }
+         else if (obsType === 'rock') { obsHeight = 1.0; obsColor = "#57534e"; }
 
          const topY = obsBaseY + obsHeight;
          if (position.current.y >= topY - 0.5) { platformHeight = Math.max(platformHeight, topY); } 

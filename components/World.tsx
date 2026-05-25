@@ -1,7 +1,7 @@
 
 import React, { useMemo, useRef, useLayoutEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { InstancedMesh, Object3D, Color, MeshStandardMaterial, CylinderGeometry, SphereGeometry, Vector3, Group, Mesh, MathUtils, MeshLambertMaterial, PlaneGeometry, BufferAttribute, DoubleSide, DodecahedronGeometry, ConeGeometry, CapsuleGeometry, BoxGeometry, IcosahedronGeometry } from 'three';
+import { InstancedMesh, Object3D, Color, MeshStandardMaterial, CylinderGeometry, SphereGeometry, Vector3, Group, Mesh, MathUtils, MeshLambertMaterial, PlaneGeometry, BufferAttribute, DoubleSide, DodecahedronGeometry, ConeGeometry, CapsuleGeometry, BoxGeometry } from 'three';
 import { getTerrainHeight, getObstacleAt, hash, getAnimalAt, AnimalType, getRiverInfo, getCloudInfo, getCoinInfo, getBridgeInfo, calculateBaseTerrain, getBridgeX, getEagleInfo } from '../services/mathService';
 import { WORLD_CONFIG } from '../types';
 import { useGameStore } from '../store';
@@ -57,21 +57,141 @@ const CloudMaterial = new MeshStandardMaterial({
 
 // --- COMPONENTS ---
 
-const SwayingTree = React.memo(({ children, x, y, z }: { children: React.ReactNode, x: number, y: number, z: number }) => {
-    const group = useRef<Group>(null);
-    const seed = useMemo(() => hash(x, z), [x, z]);
-    
-    useFrame(({ clock }) => {
-        if (!group.current) return;
-        const t = clock.getElapsedTime();
-        const windX = Math.sin(t * 0.8 + seed * 10.0) * 0.02;
-        const windZ = Math.sin(t * 1.2 + seed * 20.0) * 0.04 + Math.sin(t * 2.5 + seed) * 0.01;
-        group.current.rotation.z = windZ;
-        group.current.rotation.x = windX;
-    });
+// --- SEA OBSTACLE COMPONENTS ---
 
-    return <group ref={group} position={[x, y, z]}>{children}</group>;
-});
+// 산호초
+const Coral: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const h = hash(x, z);
+  return (
+    <group position={[x, y, z]}>
+      <mesh position={[0, 0.8, 0]} castShadow>
+        <cylinderGeometry args={[0.15, 0.3, 1.6, 6]} />
+        <meshStandardMaterial color="#f97316" roughness={0.8} />
+      </mesh>
+      <mesh position={[0.4, 1.2, 0.2]} castShadow>
+        <cylinderGeometry args={[0.1, 0.2, 1.2, 6]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.8} />
+      </mesh>
+      <mesh position={[-0.3, 1.0, -0.3]} castShadow>
+        <cylinderGeometry args={[0.12, 0.22, 1.0, 6]} />
+        <meshStandardMaterial color="#f97316" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 1.9, 0]} castShadow>
+        <dodecahedronGeometry args={[0.4, 0]} />
+        <meshStandardMaterial color="#fb923c" flatShading />
+      </mesh>
+    </group>
+  );
+};
+
+// 암초
+const Reef: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const h = hash(x, z);
+  return (
+    <group position={[x, y, z]}>
+      <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
+        <dodecahedronGeometry args={[1.2 + h * 0.4, 0]} />
+        <meshStandardMaterial color="#44403c" flatShading roughness={0.9} />
+      </mesh>
+      <mesh position={[0.8, 0.3, 0.5]} castShadow>
+        <dodecahedronGeometry args={[0.7, 0]} />
+        <meshStandardMaterial color="#57534e" flatShading roughness={0.9} />
+      </mesh>
+      <mesh position={[-0.6, 0.2, -0.4]} castShadow>
+        <dodecahedronGeometry args={[0.5, 0]} />
+        <meshStandardMaterial color="#44403c" flatShading roughness={0.9} />
+      </mesh>
+    </group>
+  );
+};
+
+// 난파선
+const Shipwreck: React.FC<{ x: number, y: number, z: number, rotation: number }> = ({ x, y, z, rotation }) => {
+  return (
+    <group position={[x, y, z]} rotation={[0.2, rotation, 0.35]}>
+      <mesh position={[0, 1.5, 0]} castShadow>
+        <boxGeometry args={[3.5, 2.0, 8.0]} />
+        <meshStandardMaterial color="#78350f" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.5, 3.5, -1]} rotation={[0, 0, 0.7]} castShadow>
+        <cylinderGeometry args={[0.15, 0.2, 5, 8]} />
+        <meshStandardMaterial color="#422006" roughness={0.9} />
+      </mesh>
+      <mesh position={[1.5, 5, -0.5]} rotation={[0.2, 0, 0.7]} castShadow>
+        <boxGeometry args={[1.5, 2.0, 0.05]} />
+        <meshStandardMaterial color="#d1d5db" roughness={0.5} side={DoubleSide} />
+      </mesh>
+      <mesh position={[0, 2.6, 1.5]} castShadow>
+        <boxGeometry args={[3.2, 0.3, 4.5]} />
+        <meshStandardMaterial color="#92400e" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+};
+
+// 등대
+const Lighthouse: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  return (
+    <group position={[x, y, z]}>
+      <mesh position={[0, 5, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.0, 1.4, 10, 10]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 3, 0]} castShadow>
+        <cylinderGeometry args={[1.05, 1.35, 1.5, 10]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 7, 0]} castShadow>
+        <cylinderGeometry args={[1.02, 1.12, 1.5, 10]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 10.5, 0]} castShadow>
+        <cylinderGeometry args={[1.2, 1.0, 1.0, 10]} />
+        <meshStandardMaterial color="#374151" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 11.2, 0]} castShadow>
+        <sphereGeometry args={[0.7, 10, 10]} />
+        <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.5} roughness={0.1} />
+      </mesh>
+      <mesh position={[0, 12, 0]} castShadow>
+        <coneGeometry args={[1.3, 1.5, 10]} />
+        <meshStandardMaterial color="#374151" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+};
+
+// 해적 요새
+const PirateFort: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  return (
+    <group position={[x, y, z]}>
+      <mesh position={[0, 3, 0]} castShadow receiveShadow>
+        <boxGeometry args={[6, 6, 6]} />
+        <meshStandardMaterial color="#57534e" roughness={0.9} flatShading />
+      </mesh>
+      {([-2, -0.7, 0.7, 2] as number[]).map((bx, i) => (
+        <mesh key={i} position={[bx, 6.5, 3.1]} castShadow>
+          <boxGeometry args={[0.8, 1.0, 0.4]} />
+          <meshStandardMaterial color="#44403c" roughness={0.9} />
+        </mesh>
+      ))}
+      {([-2, -0.7, 0.7, 2] as number[]).map((bx, i) => (
+        <mesh key={`b-${i}`} position={[bx, 6.5, -3.1]} castShadow>
+          <boxGeometry args={[0.8, 1.0, 0.4]} />
+          <meshStandardMaterial color="#44403c" roughness={0.9} />
+        </mesh>
+      ))}
+      <mesh position={[3, 5, 3]} castShadow>
+        <cylinderGeometry args={[1.0, 1.2, 8, 8]} />
+        <meshStandardMaterial color="#44403c" roughness={0.9} flatShading />
+      </mesh>
+      <mesh position={[3, 9.5, 3]} castShadow>
+        <coneGeometry args={[1.2, 2, 8]} />
+        <meshStandardMaterial color="#7c2d12" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+};
 
 const CloudObject: React.FC<{ x: number, y: number, z: number, scale: number }> = ({ x, y, z, scale }) => {
     return (
@@ -260,26 +380,6 @@ const Eagle: React.FC<{ x: number, y: number, z: number }> = React.memo(({ x, y,
     );
 });
 
-const TallTree: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    return (
-        <SwayingTree x={x} y={y} z={z}>
-             <mesh position={[1, 0.5, 0]} rotation={[0,0,-0.5]} castShadow><cylinderGeometry args={[0.3, 0.6, 2]} /><meshStandardMaterial color="#3e2723" /></mesh>
-             <mesh position={[-1, 0.5, 0]} rotation={[0,0,0.5]} castShadow><cylinderGeometry args={[0.3, 0.6, 2]} /><meshStandardMaterial color="#3e2723" /></mesh>
-             <mesh position={[0, 0.5, 1]} rotation={[0.5,0,0]} castShadow><cylinderGeometry args={[0.3, 0.6, 2]} /><meshStandardMaterial color="#3e2723" /></mesh>
-             <mesh position={[0, 0.5, -1]} rotation={[-0.5,0,0]} castShadow><cylinderGeometry args={[0.3, 0.6, 2]} /><meshStandardMaterial color="#3e2723" /></mesh>
-             <mesh position={[0, 3, 0]} castShadow receiveShadow><cylinderGeometry args={[1.4, 1.8, 6, 7]} /><meshStandardMaterial color="#4e342e" /></mesh>
-             <mesh position={[0, 8, 0]} castShadow receiveShadow><cylinderGeometry args={[1.0, 1.4, 6, 7]} /><meshStandardMaterial color="#4e342e" /></mesh>
-             <mesh position={[0, 13, 0]} castShadow receiveShadow><cylinderGeometry args={[0.7, 1.0, 6, 7]} /><meshStandardMaterial color="#4e342e" /></mesh>
-             <mesh position={[0.8, 6, 0.2]} rotation={[0,0,-1.2]} castShadow><cylinderGeometry args={[0.1, 0.2, 2]} /><meshStandardMaterial color="#3e2723" /></mesh>
-             <mesh position={[-0.7, 9, -0.3]} rotation={[0,0,1.1]} castShadow><cylinderGeometry args={[0.1, 0.15, 1.5]} /><meshStandardMaterial color="#3e2723" /></mesh>
-             <mesh position={[0, 14, 0]} castShadow><coneGeometry args={[4.5, 6, 7]} /><meshStandardMaterial color="#14532d" flatShading /></mesh>
-             <mesh position={[0, 17, 0]} castShadow><coneGeometry args={[4.0, 5, 7]} /><meshStandardMaterial color="#166534" flatShading /></mesh>
-             <mesh position={[0, 20, 0]} castShadow><coneGeometry args={[3.0, 5, 7]} /><meshStandardMaterial color="#15803d" flatShading /></mesh>
-             <mesh position={[0, 23, 0]} castShadow><coneGeometry args={[1.5, 4, 7]} /><meshStandardMaterial color="#16a34a" flatShading /></mesh>
-        </SwayingTree>
-    );
-};
-
 const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
     return (
         <group position={[x, y, z]}>
@@ -290,80 +390,6 @@ const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) =>
              <mesh position={[-2.0, 1.5, 1.5]} castShadow><dodecahedronGeometry args={[1.2, 0]} /><meshStandardMaterial color="#44403c" flatShading /></mesh>
              <mesh position={[0.5, 5.5, 2.8]}><dodecahedronGeometry args={[0.8, 0]} /><meshStandardMaterial color="#4a5d23" flatShading /></mesh>
              <mesh position={[-1, 9, 1]}><dodecahedronGeometry args={[0.6, 0]} /><meshStandardMaterial color="#4a5d23" flatShading /></mesh>
-        </group>
-    );
-};
-
-const Cabin: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    return (
-        <group position={[x, y, z]}>
-             <mesh position={[-1.5, 3.5, -1.5]}><cylinderGeometry args={[0.15, 0.15, 7]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[1.5, 3.5, -1.5]}><cylinderGeometry args={[0.15, 0.15, 7]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[-1.5, 3.5, 1.5]}><cylinderGeometry args={[0.15, 0.15, 7]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[1.5, 3.5, 1.5]}><cylinderGeometry args={[0.15, 0.15, 7]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[0, 3.5, 1.5]} rotation={[0,0,0.4]}><boxGeometry args={[3.2, 0.1, 0.1]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[0, 3.5, 1.5]} rotation={[0,0,-0.4]}><boxGeometry args={[3.2, 0.1, 0.1]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[1.5, 3.5, 0]} rotation={[0.4,0,0]}><boxGeometry args={[0.1, 0.1, 3.2]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[1.5, 3.5, 0]} rotation={[-0.4,0,0]}><boxGeometry args={[0.1, 0.1, 3.2]} /><meshStandardMaterial color="#3f2e25" /></mesh>
-             <mesh position={[0, 7, 0]} castShadow><boxGeometry args={[4.2, 0.3, 4.2]} /><meshStandardMaterial color="#5d4037" /></mesh>
-             <mesh position={[0, 8.5, 0]} castShadow><boxGeometry args={[3.5, 3, 3.5]} /><meshStandardMaterial color="#78350f" /></mesh>
-             <mesh position={[0, 11, 0]} castShadow><coneGeometry args={[3.5, 2.5, 4]} rotation={[0, Math.PI/4, 0]} /><meshStandardMaterial color="#451a03" /></mesh>
-             <mesh position={[0, 3.5, 1.7]} rotation={[0.1, 0, 0]}><boxGeometry args={[0.8, 7.5, 0.1]} /><meshStandardMaterial color="#5d4037" /></mesh>
-             {[1, 2, 3, 4, 5, 6].map(i => (<mesh key={i} position={[0, i, 1.7 + (i*0.1)]}><boxGeometry args={[0.6, 0.1, 0.15]} /><meshStandardMaterial color="#3e2723" /></mesh>))}
-        </group>
-    );
-};
-
-const Car: React.FC<{ x: number, y: number, z: number, rotation: number }> = ({ x, y, z, rotation }) => {
-    return (
-        <group position={[x, y + 0.8, z]} rotation={[0.1, rotation, 0.05]}>
-             <mesh position={[0, 0, 0]} castShadow><boxGeometry args={[2.2, 0.8, 4.5]} /><meshStandardMaterial color="#7c2d12" /></mesh>
-             <mesh position={[0, 0.9, -0.3]} castShadow><boxGeometry args={[1.8, 0.8, 2.5]} /><meshStandardMaterial color="#9a3412" /></mesh>
-             <mesh position={[1.1, -0.2, 1.2]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[0.45, 0.45, 0.3]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[-1.1, -0.2, 1.2]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[0.45, 0.45, 0.3]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[1.1, -0.2, -1.2]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[0.45, 0.45, 0.3]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[-1.1, -0.2, -1.2]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[0.45, 0.45, 0.3]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[0, -0.1, 2.3]}><boxGeometry args={[2.3, 0.2, 0.2]} /><meshStandardMaterial color="#525252" /></mesh>
-             <mesh position={[0.6, 0.1, 2.26]}><sphereGeometry args={[0.15]} /><meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={0.2} /></mesh>
-             <mesh position={[-0.6, 0.1, 2.26]}><sphereGeometry args={[0.15]} /><meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={0.2} /></mesh>
-        </group>
-    );
-};
-
-const PlaneWreck: React.FC<{ x: number, y: number, z: number, rotation: number }> = ({ x, y, z, rotation }) => {
-    return (
-        <group position={[x, y, z]} rotation={[Math.PI/6, rotation, 0.2]}>
-             <mesh position={[0, 5, 0]} castShadow><cylinderGeometry args={[1.8, 1.8, 9, 10]} /><meshStandardMaterial color="#cbd5e1" roughness={0.6} /></mesh>
-             <mesh position={[0, 10, 0]} castShadow><sphereGeometry args={[1.78, 10, 10]} /><meshStandardMaterial color="#cbd5e1" /></mesh>
-             <mesh position={[0, 10.5, 0.8]}><boxGeometry args={[1.2, 0.8, 0.5]} /><meshStandardMaterial color="#1e293b" /></mesh>
-             <mesh position={[0, 0.5, 0]}><cylinderGeometry args={[1.7, 1.0, 1]} /><meshStandardMaterial color="#1e293b" /></mesh>
-             <mesh position={[1.5, 4, 0]} rotation={[0, 0, -1.2]} castShadow><boxGeometry args={[6, 0.2, 2.5]} /><meshStandardMaterial color="#94a3b8" /></mesh>
-             <mesh position={[3.5, 2.5, 0]} rotation={[0, 0, -1.2]}><cylinderGeometry args={[0.6, 0.6, 1.5]} /><meshStandardMaterial color="#475569" /></mesh>
-             <mesh position={[3, -2, 2]} rotation={[0.5, 0.5, 0]}><boxGeometry args={[1, 0.1, 1]} /><meshStandardMaterial color="#cbd5e1" /></mesh>
-             <mesh position={[-2, -1, -3]} rotation={[0.2, 0.1, 0.5]}><boxGeometry args={[1.5, 0.1, 0.8]} /><meshStandardMaterial color="#cbd5e1" /></mesh>
-        </group>
-    );
-};
-
-const HeliWreck: React.FC<{ x: number, y: number, z: number, rotation: number }> = ({ x, y, z, rotation }) => {
-    return (
-        <group position={[x, y + 1.2, z]} rotation={[0.3, rotation, 0.4]}>
-             <mesh castShadow><icosahedronGeometry args={[2.2, 1]} /><meshStandardMaterial color="#3f6212" flatShading /></mesh>
-             <mesh position={[0, 0.5, 1.5]}><sphereGeometry args={[1.0]} /><meshStandardMaterial color="#111827" roughness={0.2} /></mesh>
-             <group position={[0, 0, -2]} rotation={[-0.5, 0, 0]}>
-                 <mesh position={[0, 0, -2]}><boxGeometry args={[0.6, 0.6, 5]} /><meshStandardMaterial color="#3f6212" /></mesh>
-                 <mesh position={[0.4, 0, -4.5]}><cylinderGeometry args={[0.1, 0.1, 0.2]} rotation={[0,0,Math.PI/2]} /><meshStandardMaterial color="#111" /></mesh>
-                 <mesh position={[0.5, 0, -4.5]} rotation={[0,0,0]}><boxGeometry args={[0.1, 2.5, 0.2]} /><meshStandardMaterial color="#111" /></mesh>
-             </group>
-             <mesh position={[0, 2.2, 0]}><cylinderGeometry args={[0.2, 0.3, 0.5]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <group position={[0, 2.5, 0]}>
-                 <mesh rotation={[0.2, 0, 0]}><boxGeometry args={[8, 0.1, 0.4]} /><meshStandardMaterial color="#111" /></mesh>
-                 <mesh rotation={[0, Math.PI/2, -0.3]}><boxGeometry args={[8, 0.1, 0.4]} /><meshStandardMaterial color="#111" /></mesh>
-             </group>
-             <mesh position={[1.5, -1.8, 0]} rotation={[0,0,-0.2]}><boxGeometry args={[0.2, 0.2, 4]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[-1.5, -1.8, 0]} rotation={[0,0,0.2]}><boxGeometry args={[0.2, 0.2, 4]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[1.5, -1.2, 1]} rotation={[0,0,-0.2]}><cylinderGeometry args={[0.1, 0.1, 1.5]} /><meshStandardMaterial color="#1f2937" /></mesh>
-             <mesh position={[-1.5, -1.2, 1]} rotation={[0,0,0.2]}><cylinderGeometry args={[0.1, 0.1, 1.5]} /><meshStandardMaterial color="#1f2937" /></mesh>
         </group>
     );
 };
@@ -596,76 +622,48 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
         const animal = getAnimalAt(x, z);
         const key = `obj-${Math.round(x)}-${Math.round(z)}`;
         
-        if (type.startsWith('tree')) {
+        if (type === 'coral') {
              const y = getTerrainHeight(finalX, finalZ);
-             const renderY = y + 0.02;
-             let treeNode;
-             if (type === 'tree_pine') {
-                 treeNode = (
-                     <SwayingTree key={key} x={finalX} y={renderY} z={finalZ}>
-                         <mesh position={[0, 1, 0]} castShadow receiveShadow><cylinderGeometry args={[0.4, 0.6, 2, 6]} /><meshStandardMaterial color="#4a3728" /></mesh>
-                         <mesh position={[0, 3, 0]} castShadow><coneGeometry args={[1.5, 3, 7]} /><meshStandardMaterial color="#166534" /></mesh>
-                         <mesh position={[0, 4.5, 0]} castShadow><coneGeometry args={[1.2, 2.5, 7]} /><meshStandardMaterial color="#166534" /></mesh>
-                     </SwayingTree>
-                 )
-             } else if (type === 'tree_oak') {
-                 treeNode = (
-                     <SwayingTree key={key} x={finalX} y={renderY} z={finalZ}>
-                         <mesh position={[0, 1.2, 0]} castShadow receiveShadow><cylinderGeometry args={[0.5, 0.7, 2.5, 7]} /><meshStandardMaterial color="#5d4037" /></mesh>
-                         <mesh position={[0, 3.5, 0]} castShadow><dodecahedronGeometry args={[1.8, 0]} /><meshStandardMaterial color="#4ade80" /></mesh>
-                         <mesh position={[1.2, 3.2, 0]} castShadow><dodecahedronGeometry args={[1.2, 0]} /><meshStandardMaterial color="#4ade80" /></mesh>
-                         <mesh position={[-1, 3.8, 0.5]} castShadow><dodecahedronGeometry args={[1.0, 0]} /><meshStandardMaterial color="#4ade80" /></mesh>
-                     </SwayingTree>
-                 )
-             } else {
-                 treeNode = (
-                     <SwayingTree key={key} x={finalX} y={renderY} z={finalZ}>
-                         <mesh position={[0, 1.5, 0]} castShadow receiveShadow><cylinderGeometry args={[0.3, 0.5, 3, 6]} /><meshStandardMaterial color="#5d4037" /></mesh>
-                         <mesh position={[0, 3.5, 0]} castShadow><sphereGeometry args={[1.7, 7, 7]} /><meshStandardMaterial color="#22c55e" /></mesh>
-                     </SwayingTree>
-                 )
-             }
-             obstacles.push(treeNode);
-        } else if (type === 'tall_tree') {
+             obstacles.push(<Coral key={key} x={finalX} y={y} z={finalZ} />);
+        } else if (type === 'reef') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<TallTree key={key} x={finalX} y={y} z={finalZ} />);
-             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 19} z={finalZ} isLarge />);
-        } else if (type === 'tall_rock') {
+             obstacles.push(<Reef key={key} x={finalX} y={y} z={finalZ} />);
+        } else if (type === 'debris' || type === 'driftwood') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<TallRock key={key} x={finalX} y={y} z={finalZ} />);
-             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 16} z={finalZ} isLarge />);
-        } else if (type === 'structure_cabin') {
-             const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<Cabin key={key} x={finalX} y={y} z={finalZ} />);
-             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 14} z={finalZ} isLarge />);
-        } else if (type === 'structure_car') {
-             const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<Car key={key} x={finalX} y={y} z={finalZ} rotation={h * 3} />);
-             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 5} z={finalZ} isLarge />);
-        } else if (type === 'structure_plane') {
-             const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<PlaneWreck key={key} x={finalX} y={y} z={finalZ} rotation={h} />);
-             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 13} z={finalZ} isLarge />);
-        } else if (type === 'structure_heli') {
-             const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<HeliWreck key={key} x={finalX} y={y} z={finalZ} rotation={h} />);
-             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 8} z={finalZ} isLarge />);
+             obstacles.push(
+                 <mesh key={key} position={[finalX, y + 0.2, finalZ]} rotation={[0, h * 3, Math.PI / 2]} castShadow>
+                     <cylinderGeometry args={[0.25, 0.25, 1.5, 8]} />
+                     <meshStandardMaterial color="#78350f" roughness={0.9} />
+                 </mesh>
+             );
         } else if (type === 'rock') {
              const y = getTerrainHeight(finalX, finalZ);
              obstacles.push(
-                 <mesh key={key} position={[finalX, y + 0.3, finalZ]} castShadow receiveShadow>
+                 <mesh key={key} position={[finalX, y + 0.3, finalZ]} castShadow>
                      <dodecahedronGeometry args={[0.5 + h * 0.3, 0]} />
-                     <meshStandardMaterial color="#78716c" />
+                     <meshStandardMaterial color="#57534e" flatShading />
                  </mesh>
              );
-        } else if (type === 'log') {
+        } else if (type === 'tall_coral') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(
-                 <mesh key={key} position={[finalX, y + 0.2, finalZ]} rotation={[0, h * 3, Math.PI/2]} castShadow>
-                     <cylinderGeometry args={[0.2, 0.2, 1.2, 8]} />
-                     <meshStandardMaterial color="#4a3728" />
-                 </mesh>
-             );
+             obstacles.push(<Coral key={key} x={finalX} y={y} z={finalZ} />);
+             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 5} z={finalZ} isLarge />);
+        } else if (type === 'tall_rock') {
+             const y = getTerrainHeight(finalX, finalZ);
+             obstacles.push(<Reef key={key} x={finalX} y={y} z={finalZ} />);
+             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 5} z={finalZ} isLarge />);
+        } else if (type === 'structure_shipwreck') {
+             const y = getTerrainHeight(finalX, finalZ);
+             obstacles.push(<Shipwreck key={key} x={finalX} y={y} z={finalZ} rotation={h} />);
+             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 8} z={finalZ} isLarge />);
+        } else if (type === 'structure_lighthouse') {
+             const y = getTerrainHeight(finalX, finalZ);
+             obstacles.push(<Lighthouse key={key} x={finalX} y={y} z={finalZ} />);
+             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 14} z={finalZ} isLarge />);
+        } else if (type === 'structure_fort') {
+             const y = getTerrainHeight(finalX, finalZ);
+             obstacles.push(<PirateFort key={key} x={finalX} y={y} z={finalZ} />);
+             coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 10} z={finalZ} isLarge />);
         }
 
         const aProps = { key: `anim-${key}`, x: finalX, y: getTerrainHeight(finalX, finalZ) + 0.02, z: finalZ };
