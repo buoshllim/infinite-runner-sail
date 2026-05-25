@@ -119,92 +119,66 @@ export function getCloudInfo(x: number, z: number) {
   return { isCloud: false, x: gridX, y: 0, z: gridZ, scale: 0, radius: 0 };
 }
 
-// --- EAGLE LOGIC ---
+// --- SHARK FIN LOGIC (replaces eagle) ---
 export function getEagleInfo(x: number, z: number) {
-    // We assume X and Z are already grid-snapped by the caller loop for efficiency
-    if (z < 200) return { isEagle: false };
+  if (z < 300) return { isEagle: false, x: 0, y: 0, z: 0 };
 
-    const h = hash(x * 0.555, z * 0.333);
-    
-    // Reduced spawn rate: 4% (was 10%)
-    if (h > 0.96) {
-        // Height: 25m to 55m to cover high obstacles and clouds
-        const randomHeight = 25 + (hash(z, x) * 30); 
-        return { isEagle: true, x, y: randomHeight, z };
-    }
-    return { isEagle: false };
+  const h = hash(x * 5.1, z * 2.9);
+  if (h > 0.985) {
+    const offsetX = (hash(x, z * 2) - 0.5) * WORLD_CONFIG.LANE_WIDTH * 1.5;
+    const offsetZ = (hash(z, x * 3) - 0.5) * 20;
+    return {
+      isEagle: true,
+      x: x + offsetX,
+      y: 0.5, // 수면 위 (원본은 20~40 높이)
+      z: z + offsetZ
+    };
+  }
+  return { isEagle: false, x: 0, y: 0, z: 0 };
 }
 
-export type ObstacleType = 'tree_pine' | 'tree_oak' | 'tree_round' | 'rock' | 'log' | 'tall_tree' | 'tall_rock' | 'structure_cabin' | 'structure_car' | 'structure_plane' | 'structure_heli' | 'none';
+export type ObstacleType = 'coral' | 'reef' | 'debris' | 'rock' | 'driftwood' | 'tall_rock' | 'tall_coral' | 'structure_lighthouse' | 'structure_shipwreck' | 'structure_fort' | 'none';
 
-export function getObstacleAt(x: number, z: number): ObstacleType {
-  // No obstacles on bridge or in river
-  if (getBridgeInfo(x, z).isBridge) return 'none';
-  if (getRiverInfo(z).isRiver) return 'none';
-
-  const gridX = Math.round(x / 4) * 4;
-  const gridZ = Math.round(z / 8) * 8;
-
-  if (Math.abs(x - gridX) > 1 || Math.abs(z - gridZ) > 1) return 'none';
+export function getObstacleAt(x: number, z: number): string {
   if (z < 150) return 'none';
-
-  const h = hash(gridX, gridZ);
-  const distFromCenter = Math.abs(gridX);
-
-  if (h > 0.995) { 
-      const subType = hash(gridZ, gridX); 
-      if (subType > 0.85) return 'structure_heli';
-      if (subType > 0.70) return 'structure_plane';
-      if (subType > 0.55) return 'structure_car';
-      if (subType > 0.40) return 'structure_cabin';
-      if (subType > 0.20) return 'tall_rock';
-      return 'tall_tree';
-  }
-
-  if (distFromCenter < 12) {
-    if (h > 0.96) return 'rock';
-    if (h > 0.92 && h <= 0.96) return 'log';
-    return 'none';
-  }
-
-  if (h > 0.65) {
-     if (h > 0.90) return 'tree_pine';
-     if (h > 0.78) return 'tree_oak';
-     return 'tree_round';
-  }
-  if (h > 0.60) return 'rock';
-  
+  const h = hash(x, z);
+  if (h > 0.994) return 'structure_lighthouse';
+  if (h > 0.990) return 'structure_shipwreck';
+  if (h > 0.986) return 'structure_fort';
+  if (h > 0.982) return 'tall_rock';
+  if (h > 0.978) return 'tall_coral';
+  if (h > 0.94)  return 'coral';
+  if (h > 0.90)  return 'reef';
+  if (h > 0.86)  return 'debris';
+  if (h > 0.83)  return 'rock';
+  if (h > 0.80)  return 'driftwood';
   return 'none';
 }
 
-export type AnimalType = 'bear' | 'rabbit' | 'squirrel' | 'lamb' | 'chicken' | 'duck' | 'fox' | 'deer' | 'hedgehog' | 'pig' | 'cat' | 'none';
+export type AnimalType =
+  | 'none'
+  | 'dolphin'
+  | 'seagull'
+  | 'turtle'
+  | 'pufferfish'
+  | 'stingray'
+  | 'crab'
+  | 'seal'
+  | 'penguin'
+  | 'fish';
 
 export function getAnimalAt(x: number, z: number): AnimalType {
-  // No animals on bridge or in river
-  if (getBridgeInfo(x, z).isBridge) return 'none';
-  if (getRiverInfo(z).isRiver) return 'none';
-
-  const gridX = Math.round(x / 8) * 8; 
-  const gridZ = Math.round(z / 15) * 15;
-
-  if (Math.abs(x - gridX) > 2 || Math.abs(z - gridZ) > 2) return 'none';
-  if (z < 150) return 'none';
-  if (Math.abs(gridX) > 15) return 'none';
-
-  const h = hash(gridX + 500, gridZ + 500);
-  
-  if (h > 0.98) return 'bear';
-  if (h > 0.96) return 'deer';
-  if (h > 0.94) return 'fox';
-  if (h > 0.92) return 'pig'; 
-  if (h > 0.90) return 'lamb';
-  if (h > 0.88) return 'cat'; 
-  if (h > 0.86) return 'duck';
-  if (h > 0.84) return 'chicken';
-  if (h > 0.81) return 'hedgehog'; 
-  if (h > 0.77) return 'squirrel';
-  if (h > 0.70) return 'rabbit'; 
-
+  if (z < 200) return 'none';
+  const h = hash(x * 7.3, z * 3.7);
+  if (h > 0.97) return 'dolphin';
+  if (h > 0.94) return 'seagull';
+  if (h > 0.91) return 'turtle';
+  if (h > 0.88) return 'pufferfish';
+  if (h > 0.85) return 'stingray';
+  if (h > 0.82) return 'crab';
+  if (h > 0.79) return 'seal';
+  if (h > 0.76) return 'penguin';
+  if (h > 0.73) return 'fish';
   return 'none';
 }
 
