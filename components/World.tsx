@@ -394,71 +394,87 @@ const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) =>
     );
 };
 
-const Bridge: React.FC<{ z: number, x: number }> = React.memo(({ z, x }) => {
-    const LENGTH = 24; 
-    const WIDTH = 6;
-    const SEGMENTS = 16;
-    const baseHeight = calculateBaseTerrain(x, z - 12); 
+const IslandStrait: React.FC<{ z: number, x: number }> = React.memo(({ z, x }) => {
+  const ISLAND_RADIUS_X = 55;
+  const baseY = calculateBaseTerrain(x, z - 12);
 
-    return (
-        <group position={[x, baseHeight + 0.2, z]}>
-            {/* Arched Deck & Rails */}
-            {[...Array(SEGMENTS)].map((_, i) => {
-                const t = i / (SEGMENTS - 1); 
-                const dist = (t - 0.5) * LENGTH; 
-                const normDist = (dist / (LENGTH/2));
-                const height = 3.0 * (1 - normDist * normDist); 
-                const slope = -2 * 3.0 * normDist / (LENGTH/2);
-                const rotX = Math.atan(slope);
+  return (
+    <group position={[0, baseY, z]}>
+      {/* 왼쪽 섬 */}
+      <group position={[-ISLAND_RADIUS_X - 5, 0, 0]}>
+        <mesh castShadow receiveShadow>
+          <sphereGeometry args={[ISLAND_RADIUS_X, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#15803d" roughness={1} flatShading />
+        </mesh>
+        {/* 야자수 1 */}
+        <mesh position={[8, 5, 5]} castShadow>
+          <cylinderGeometry args={[0.3, 0.5, 10, 7]} />
+          <meshStandardMaterial color="#4a3728" roughness={0.9} />
+        </mesh>
+        <mesh position={[8, 10.5, 5]} castShadow>
+          <sphereGeometry args={[4, 7, 5]} />
+          <meshStandardMaterial color="#166534" flatShading />
+        </mesh>
+        {/* 야자수 2 */}
+        <mesh position={[-5, 4, -4]} castShadow>
+          <cylinderGeometry args={[0.25, 0.45, 8, 7]} />
+          <meshStandardMaterial color="#4a3728" roughness={0.9} />
+        </mesh>
+        <mesh position={[-5, 8.5, -4]} castShadow>
+          <sphereGeometry args={[3.5, 7, 5]} />
+          <meshStandardMaterial color="#15803d" flatShading />
+        </mesh>
+      </group>
 
-                return (
-                    <group key={i} position={[0, height, dist]} rotation={[rotX, 0, 0]}>
-                         {/* Plank */}
-                        <mesh receiveShadow castShadow>
-                            <boxGeometry args={[WIDTH, 0.4, LENGTH/SEGMENTS + 0.1]} />
-                            <meshStandardMaterial color="#8d6e63" roughness={0.9} />
-                        </mesh>
-                        {/* Rail Posts */}
-                        <mesh position={[WIDTH/2 - 0.2, 0.6, 0]} castShadow>
-                            <boxGeometry args={[0.2, 1.2, 0.2]} />
-                            <meshStandardMaterial color="#5d4037" />
-                        </mesh>
-                        <mesh position={[-WIDTH/2 + 0.2, 0.6, 0]} castShadow>
-                            <boxGeometry args={[0.2, 1.2, 0.2]} />
-                            <meshStandardMaterial color="#5d4037" />
-                        </mesh>
-                        {/* Rail Horizontal - Approximation */}
-                        <mesh position={[WIDTH/2 - 0.2, 1.1, 0]} rotation={[Math.PI/2,0,0]}>
-                             <cylinderGeometry args={[0.1, 0.1, LENGTH/SEGMENTS + 0.2]} />
-                             <meshStandardMaterial color="#4e342e" />
-                        </mesh>
-                         <mesh position={[-WIDTH/2 + 0.2, 1.1, 0]} rotation={[Math.PI/2,0,0]}>
-                             <cylinderGeometry args={[0.1, 0.1, LENGTH/SEGMENTS + 0.2]} />
-                             <meshStandardMaterial color="#4e342e" />
-                        </mesh>
-                    </group>
-                );
-            })}
-            
-            {/* Support Pillars at ends (Banks) */}
-            <mesh position={[WIDTH/2 - 0.5, -4, -LENGTH/2 + 2]}>
-                <cylinderGeometry args={[0.4, 0.4, 8]} />
-                <meshStandardMaterial color="#3e2723" />
-            </mesh>
-            <mesh position={[-WIDTH/2 + 0.5, -4, -LENGTH/2 + 2]}>
-                <cylinderGeometry args={[0.4, 0.4, 8]} />
-                <meshStandardMaterial color="#3e2723" />
-            </mesh>
-            <mesh position={[WIDTH/2 - 0.5, -4, LENGTH/2 - 2]}>
-                <cylinderGeometry args={[0.4, 0.4, 8]} />
-                <meshStandardMaterial color="#3e2723" />
-            </mesh>
-            <mesh position={[-WIDTH/2 + 0.5, -4, LENGTH/2 - 2]}>
-                <cylinderGeometry args={[0.4, 0.4, 8]} />
-                <meshStandardMaterial color="#3e2723" />
-            </mesh>
+      {/* 오른쪽 섬 */}
+      <group position={[ISLAND_RADIUS_X + 5, 0, 0]}>
+        <mesh castShadow receiveShadow>
+          <sphereGeometry args={[ISLAND_RADIUS_X, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#15803d" roughness={1} flatShading />
+        </mesh>
+        {/* 야자수 */}
+        <mesh position={[-6, 4, 3]} castShadow>
+          <cylinderGeometry args={[0.3, 0.5, 9, 7]} />
+          <meshStandardMaterial color="#4a3728" roughness={0.9} />
+        </mesh>
+        <mesh position={[-6, 9, 3]} castShadow>
+          <sphereGeometry args={[3.8, 7, 5]} />
+          <meshStandardMaterial color="#166534" flatShading />
+        </mesh>
+      </group>
+
+      {/* 부표 — 왼쪽(빨강) */}
+      {([-10, -3, 3, 10] as number[]).map((dz, i) => (
+        <group key={i} position={[x - 5, 0.8, dz]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 1.6, 8]} />
+            <meshStandardMaterial color="#dc2626" />
+          </mesh>
+          <mesh position={[0, 1.2, 0]}>
+            <sphereGeometry args={[0.4, 8, 8]} />
+            <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={0.3} />
+          </mesh>
+          <mesh position={[0, -0.9, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 1, 6]} />
+            <meshStandardMaterial color="#374151" />
+          </mesh>
         </group>
-    );
+      ))}
+      {/* 부표 — 오른쪽(초록) */}
+      {([-10, -3, 3, 10] as number[]).map((dz, i) => (
+        <group key={`r-${i}`} position={[x + 5, 0.8, dz]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 1.6, 8]} />
+            <meshStandardMaterial color="#16a34a" />
+          </mesh>
+          <mesh position={[0, 1.2, 0]}>
+            <sphereGeometry args={[0.4, 8, 8]} />
+            <meshStandardMaterial color="#16a34a" emissive="#16a34a" emissiveIntensity={0.3} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
 });
 
 const useWander = (x: number, z: number, speedMult: number = 1) => {
@@ -707,23 +723,20 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
       if (r.isRiver && r.centerZ && !riversFound.has(r.centerZ)) {
           riversFound.add(r.centerZ);
           const bx = getBridgeX(r.centerZ);
-          bridges.push(<Bridge key={`bridge-${r.centerZ}`} z={r.centerZ} x={bx} />);
-          
-          // --- BRIDGE COINS (ROW) ---
-          const numCoins = Math.floor(hash(r.centerZ, 123) * 6) + 5; 
-          const bridgeLen = 24;
-          const spacing = bridgeLen / (numCoins + 1);
-          
+          bridges.push(<IslandStrait key={`strait-${r.centerZ}`} z={r.centerZ} x={bx} />);
+
+          // --- STRAIT COINS (ROW along the passage) ---
+          const numCoins = Math.floor(hash(r.centerZ, 123) * 6) + 5;
+          const straitLen = 24;
+          const spacing = straitLen / (numCoins + 1);
+
           for(let i=1; i<=numCoins; i++) {
-              const coinDist = -bridgeLen/2 + i*spacing; 
+              const coinDist = -straitLen/2 + i*spacing;
               const coinZ = r.centerZ + coinDist;
-              const halfL = bridgeLen / 2;
-              const normDist = coinDist / halfL;
-              const archY = 3.0 * (1 - normDist * normDist); 
-              const baseY = calculateBaseTerrain(bx, r.centerZ - 12); 
-              const coinY = baseY + archY + 0.2 + 0.5; 
-              
-              coins.push(<Coin key={`bridge-coin-${r.centerZ}-${i}`} x={bx} y={coinY} z={coinZ} />);
+              const baseY = calculateBaseTerrain(bx, r.centerZ - 12);
+              const coinY = baseY + 1.5;
+
+              coins.push(<Coin key={`strait-coin-${r.centerZ}-${i}`} x={bx} y={coinY} z={coinZ} />);
           }
       }
   }
