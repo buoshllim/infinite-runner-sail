@@ -12,7 +12,7 @@ export interface Position {
 
 export const WORLD_CONFIG = {
   SPEED: 10,
-  JUMP_FORCE: 18,
+  JUMP_FORCE: 9,          // 18 → 9: 파도 점프 (낮고 잔잔하게)
   GRAVITY: 40,
   TERRAIN_SCALE: 0.15,
   TERRAIN_HEIGHT: 4,
