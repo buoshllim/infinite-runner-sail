@@ -369,9 +369,16 @@ export const Player: React.FC = () => {
       <group ref={groupRef} position={[0, 5, 0]} name="PlayerGroup">
         <group ref={headRef} position={[0, HEAD_Y, 0]}>
             <mesh castShadow><boxGeometry args={[HEAD_SZ, HEAD_SZ, HEAD_SZ]} /><meshStandardMaterial color="#fbbf24" roughness={0.3} /></mesh>
-            <group position={[0, HEAD_SZ/2, 0]}>
-                <mesh position={[0, 0.08, 0]}><boxGeometry args={[HEAD_SZ + 0.02, 0.16, HEAD_SZ + 0.02]} /><meshStandardMaterial color="#15803d" /></mesh>
-                <mesh position={[0, 0.02, HEAD_SZ/2 + 0.08]}><boxGeometry args={[HEAD_SZ + 0.2, 0.02, 0.2]} /><meshStandardMaterial color="#15803d" /></mesh>
+            {/* 선원 모자 (흰 밴드 + 네이비 몸통) */}
+            <group position={[0, HEAD_SZ / 2, 0]}>
+              <mesh position={[0, 0.08, 0]}>
+                <boxGeometry args={[HEAD_SZ + 0.02, 0.16, HEAD_SZ + 0.02]} />
+                <meshStandardMaterial color="#1e3a8a" />
+              </mesh>
+              <mesh position={[0, 0.16, 0]}>
+                <boxGeometry args={[HEAD_SZ - 0.04, 0.06, HEAD_SZ - 0.04]} />
+                <meshStandardMaterial color="#ffffff" />
+              </mesh>
             </group>
             <group position={[0, 0, HEAD_SZ/2 + 0.001]}>
                 <mesh position={[-0.08, 0.08, 0]} rotation={[0,0,-0.15]}><boxGeometry args={[0.08, 0.02, 0.01]} /><meshStandardMaterial color="#854d0e" /></mesh>
@@ -388,43 +395,54 @@ export const Player: React.FC = () => {
                 </group>
             </group>
         </group>
-        <mesh ref={bodyRef} position={[0, BODY_Y, 0]} castShadow><boxGeometry args={[BODY_W, BODY_H, BODY_D]} /><meshStandardMaterial color="#dc2626" roughness={0.5} /></mesh>
+        <mesh ref={bodyRef} position={[0, BODY_Y, 0]} castShadow><boxGeometry args={[BODY_W, BODY_H, BODY_D]} /><meshStandardMaterial color="#1e3a8a" roughness={0.5} /></mesh>
+        {/* 흰 V자 칼라 */}
+        <mesh position={[0, BODY_Y + BODY_H / 2 - 0.05, BODY_D / 2 + 0.001]}>
+          <boxGeometry args={[BODY_W * 0.6, 0.15, 0.01]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
         <group ref={leftArmRef} position={[-BODY_W/2 - LIMB_W/2, 0, 0]}><mesh position={[0, -LIMB_H/2 + 0.1, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#fbbf24" /></mesh></group>
         <group ref={rightArmRef} position={[BODY_W/2 + LIMB_W/2, 0, 0]}><mesh position={[0, -LIMB_H/2 + 0.1, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#fbbf24" /></mesh></group>
-        <group ref={leftLegRef} position={[-0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#1d4ed8" /></mesh></group>
-        <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#1d4ed8" /></mesh></group>
-        
-        {/* LARGE TRAVEL BACKPACK */}
-        <group position={[0, BODY_Y + 0.05, -BODY_D/2 - 0.15]}>
-            {/* Main Body */}
-            <mesh castShadow position={[0, 0, 0]}>
-                <boxGeometry args={[0.35, 0.5, 0.25]} />
-                <meshStandardMaterial color="#78350f" />
-            </mesh>
-            {/* Top Flap */}
-            <mesh castShadow position={[0, 0.28, 0]}>
-                <boxGeometry args={[0.37, 0.12, 0.27]} />
-                <meshStandardMaterial color="#92400e" />
-            </mesh>
-            {/* Side Pockets */}
-            <mesh castShadow position={[-0.2, -0.1, 0]}>
-                <boxGeometry args={[0.1, 0.25, 0.15]} />
-                <meshStandardMaterial color="#92400e" />
-            </mesh>
-            <mesh castShadow position={[0.2, -0.1, 0]}>
-                <boxGeometry args={[0.1, 0.25, 0.15]} />
-                <meshStandardMaterial color="#92400e" />
-            </mesh>
-            {/* Bedroll (Top) - MOVED UP */}
-            <mesh castShadow position={[0, 0.42, 0]} rotation={[0, 0, Math.PI/2]}>
-                <cylinderGeometry args={[0.09, 0.09, 0.38, 8]} />
-                <meshStandardMaterial color="#4ade80" />
-            </mesh>
-            {/* Back Pocket Detail */}
-            <mesh position={[0, -0.05, -0.15]}>
-                <boxGeometry args={[0.2, 0.2, 0.05]} />
-                <meshStandardMaterial color="#5d4037" />
-            </mesh>
+        <group ref={leftLegRef} position={[-0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
+        <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
+
+        {/* 범선 모델 — 캐릭터 발 아래 */}
+        <group position={[0, -LEG_Y - 0.3, 0]}>
+          {/* 선체 (hull) */}
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[2.2, 0.6, 4.5]} />
+            <meshStandardMaterial color="#92400e" roughness={0.8} />
+          </mesh>
+          {/* 갑판 (deck) */}
+          <mesh position={[0, 0.35, 0]} receiveShadow>
+            <boxGeometry args={[2.0, 0.1, 4.2]} />
+            <meshStandardMaterial color="#a16207" roughness={0.9} />
+          </mesh>
+          {/* 뱃머리 (bow) */}
+          <mesh position={[0, 0.1, 2.4]} rotation={[0.3, 0, 0]} castShadow>
+            <boxGeometry args={[1.8, 0.5, 0.6]} />
+            <meshStandardMaterial color="#78350f" roughness={0.8} />
+          </mesh>
+          {/* 돛대 (mast) */}
+          <mesh position={[0, 3.5, 0.5]} castShadow>
+            <cylinderGeometry args={[0.08, 0.1, 7, 8]} />
+            <meshStandardMaterial color="#422006" roughness={0.9} />
+          </mesh>
+          {/* 주 돛 (main sail) */}
+          <mesh position={[0, 3.5, 0.5]} castShadow>
+            <boxGeometry args={[2.8, 4.0, 0.05]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.3} side={2} />
+          </mesh>
+          {/* 돛 상단 가로대 (yard) */}
+          <mesh position={[0, 5.6, 0.5]}>
+            <boxGeometry args={[3.2, 0.1, 0.1]} />
+            <meshStandardMaterial color="#422006" />
+          </mesh>
+          {/* 해적 깃발 */}
+          <mesh position={[0.15, 7.2, 0.5]} castShadow>
+            <boxGeometry args={[0.6, 0.4, 0.02]} />
+            <meshStandardMaterial color="#dc2626" />
+          </mesh>
         </group>
       </group>
     </>
