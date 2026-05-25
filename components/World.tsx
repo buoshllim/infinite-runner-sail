@@ -489,49 +489,180 @@ const useWander = (x: number, z: number, speedMult: number = 1) => {
     return group;
 };
 
-const Bear: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 0.8);
-    return <group ref={ref}><mesh castShadow position={[0, 0.8, 0]}><boxGeometry args={[1.2, 1.4, 2]} /><meshStandardMaterial color="#3e2723" /></mesh><mesh position={[0, 1.8, 0.8]}><boxGeometry args={[0.8, 0.8, 0.8]} /><meshStandardMaterial color="#3e2723" /></mesh><mesh position={[0.6, 0, 0.8]}><boxGeometry args={[0.4, 0.8, 0.4]} /><meshStandardMaterial color="#271c19" /></mesh><mesh position={[-0.6, 0, 0.8]}><boxGeometry args={[0.4, 0.8, 0.4]} /><meshStandardMaterial color="#271c19" /></mesh><mesh position={[0.6, 0, -0.8]}><boxGeometry args={[0.4, 0.8, 0.4]} /><meshStandardMaterial color="#271c19" /></mesh><mesh position={[-0.6, 0, -0.8]}><boxGeometry args={[0.4, 0.8, 0.4]} /><meshStandardMaterial color="#271c19" /></mesh></group>
+const Dolphin: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 1.2);
+  return (
+    <group ref={ref}>
+      <mesh castShadow position={[0, 0.3, 0]} scale={[1, 0.7, 2.0]}>
+        <capsuleGeometry args={[0.35, 0.8, 4, 8]} />
+        <meshStandardMaterial color="#0ea5e9" roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.5, 0.9]}>
+        <coneGeometry args={[0.12, 0.4, 8]} />
+        <meshStandardMaterial color="#0284c7" />
+      </mesh>
+      <mesh position={[0, 0.7, 0.1]}>
+        <boxGeometry args={[0.08, 0.5, 0.3]} />
+        <meshStandardMaterial color="#0284c7" />
+      </mesh>
+    </group>
+  );
 };
-const Rabbit: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 1.5);
-    return <group ref={ref}><mesh castShadow position={[0, 0.3, 0]}><sphereGeometry args={[0.3, 8, 8]} /><meshStandardMaterial color="#e5e7eb" /></mesh><mesh position={[0, 0.5, 0.2]}><sphereGeometry args={[0.2, 8, 8]} /><meshStandardMaterial color="#e5e7eb" /></mesh><mesh position={[0.1, 0.8, 0.2]} rotation={[0.2,0,0]}><capsuleGeometry args={[0.05, 0.4, 4, 8]} /><meshStandardMaterial color="#fca5a5" /></mesh><mesh position={[-0.1, 0.8, 0.2]} rotation={[0.2,0,0]}><capsuleGeometry args={[0.05, 0.4, 4, 8]} /><meshStandardMaterial color="#fca5a5" /></mesh></group>
+
+const Seagull: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z + 5, 1.5);
+  return (
+    <group ref={ref} position={[0, 3, 0]}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.25, 8, 8]} />
+        <meshStandardMaterial color="#f8fafc" />
+      </mesh>
+      <mesh position={[0, 0.1, 0.3]}>
+        <coneGeometry args={[0.06, 0.3, 6]} />
+        <meshStandardMaterial color="#fbbf24" />
+      </mesh>
+      <mesh position={[-0.5, 0, 0]} rotation={[0, 0, 0.2]}>
+        <boxGeometry args={[0.8, 0.05, 0.3]} />
+        <meshStandardMaterial color="#e2e8f0" />
+      </mesh>
+      <mesh position={[0.5, 0, 0]} rotation={[0, 0, -0.2]}>
+        <boxGeometry args={[0.8, 0.05, 0.3]} />
+        <meshStandardMaterial color="#e2e8f0" />
+      </mesh>
+    </group>
+  );
 };
-const Squirrel: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 2.0);
-    return <group ref={ref}><mesh castShadow position={[0, 0.25, 0]}><capsuleGeometry args={[0.2, 0.4, 4, 8]} /><meshStandardMaterial color="#d97706" /></mesh><mesh position={[0, 0.3, -0.3]} rotation={[-0.5,0,0]}><capsuleGeometry args={[0.15, 0.5, 4, 8]} /><meshStandardMaterial color="#92400e" /></mesh></group>
+
+const Turtle: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 0.5);
+  return (
+    <group ref={ref}>
+      <mesh castShadow position={[0, 0.2, 0]} scale={[1.2, 0.5, 1.5]}>
+        <dodecahedronGeometry args={[0.5, 0]} />
+        <meshStandardMaterial color="#15803d" flatShading />
+      </mesh>
+      <mesh position={[0, 0.2, 0.6]}>
+        <sphereGeometry args={[0.2, 8, 8]} />
+        <meshStandardMaterial color="#166534" />
+      </mesh>
+      {([[-0.5, 0, 0.3], [0.5, 0, 0.3], [-0.4, 0, -0.3], [0.4, 0, -0.3]] as [number,number,number][]).map(([lx, ly, lz], i) => (
+        <mesh key={i} position={[lx, 0.05, lz]}>
+          <boxGeometry args={[0.25, 0.1, 0.4]} />
+          <meshStandardMaterial color="#15803d" />
+        </mesh>
+      ))}
+    </group>
+  );
 };
-const Lamb: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 0.7);
-    return <group ref={ref}><mesh castShadow position={[0, 0.4, 0]}><dodecahedronGeometry args={[0.5, 0]} /><meshStandardMaterial color="#f3f4f6" /></mesh><mesh position={[0, 0.5, 0.4]}><dodecahedronGeometry args={[0.3, 0]} /><meshStandardMaterial color="#1f2937" /></mesh><mesh position={[0.2, 0.1, 0.2]}><cylinderGeometry args={[0.05, 0.05, 0.4]} /><meshStandardMaterial color="#111" /></mesh><mesh position={[-0.2, 0.1, 0.2]}><cylinderGeometry args={[0.05, 0.05, 0.4]} /><meshStandardMaterial color="#111" /></mesh><mesh position={[0.2, 0.1, -0.2]}><cylinderGeometry args={[0.05, 0.05, 0.4]} /><meshStandardMaterial color="#111" /></mesh><mesh position={[-0.2, 0.1, -0.2]}><cylinderGeometry args={[0.05, 0.05, 0.4]} /><meshStandardMaterial color="#111" /></mesh></group>
+
+const Pufferfish: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 0.7);
+  return (
+    <group ref={ref} position={[0, 0.5, 0]}>
+      <mesh castShadow>
+        <dodecahedronGeometry args={[0.45, 0]} />
+        <meshStandardMaterial color="#fbbf24" flatShading />
+      </mesh>
+      <mesh position={[0, 0, 0.45]}>
+        <sphereGeometry args={[0.12, 6, 6]} />
+        <meshStandardMaterial color="#000" />
+      </mesh>
+    </group>
+  );
 };
-const Chicken: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 1.2);
-    return <group ref={ref}><mesh castShadow position={[0, 0.3, 0]}><sphereGeometry args={[0.3, 8, 8]} /><meshStandardMaterial color="#fff" /></mesh><mesh position={[0, 0.5, 0.2]}><coneGeometry args={[0.05, 0.1, 8]} rotation={[Math.PI/2,0,0]} /><meshStandardMaterial color="#f59e0b" /></mesh><mesh position={[0, 0.6, 0]}><boxGeometry args={[0.05, 0.1, 0.1]} /><meshStandardMaterial color="#dc2626" /></mesh></group>
+
+const Fish: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 2.0);
+  return (
+    <group ref={ref} position={[0, 0.3, 0]}>
+      <mesh castShadow scale={[0.8, 0.6, 1.5]}>
+        <sphereGeometry args={[0.25, 8, 8]} />
+        <meshStandardMaterial color="#60a5fa" roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0, -0.35]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.2, 0.3, 6]} />
+        <meshStandardMaterial color="#3b82f6" />
+      </mesh>
+    </group>
+  );
 };
-const Duck: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 1.0);
-    return <group ref={ref}><mesh castShadow position={[0, 0.25, 0]} scale={[1, 0.8, 1.5]}><sphereGeometry args={[0.3, 8, 8]} /><meshStandardMaterial color="#facc15" /></mesh><mesh position={[0, 0.5, 0.3]}><sphereGeometry args={[0.2, 8, 8]} /><meshStandardMaterial color="#16a34a" /></mesh><mesh position={[0, 0.5, 0.5]}><boxGeometry args={[0.15, 0.05, 0.2]} /><meshStandardMaterial color="#f59e0b" /></mesh></group>
+
+const Crab: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 0.6);
+  return (
+    <group ref={ref}>
+      <mesh castShadow position={[0, 0.15, 0]} scale={[1.4, 0.6, 1]}>
+        <boxGeometry args={[0.5, 0.3, 0.4]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.7} />
+      </mesh>
+      {([[-0.35, 0.1, 0.1], [0.35, 0.1, 0.1], [-0.35, 0.1, -0.1], [0.35, 0.1, -0.1]] as [number,number,number][]).map(([lx, ly, lz], i) => (
+        <mesh key={i} position={[lx, ly, lz]} rotation={[0, 0, lx < 0 ? 0.5 : -0.5]}>
+          <boxGeometry args={[0.4, 0.06, 0.06]} />
+          <meshStandardMaterial color="#b91c1c" />
+        </mesh>
+      ))}
+    </group>
+  );
 };
-const Fox: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 1.4);
-    return <group ref={ref}><mesh castShadow position={[0, 0.3, 0]}><boxGeometry args={[0.4, 0.4, 0.8]} /><meshStandardMaterial color="#ea580c" /></mesh><mesh position={[0, 0.5, 0.5]}><dodecahedronGeometry args={[0.25, 0]} /><meshStandardMaterial color="#ea580c" /></mesh><mesh position={[0, 0.4, -0.6]} rotation={[-0.5,0,0]}><coneGeometry args={[0.15, 0.6, 8]} /><meshStandardMaterial color="#fff" /></mesh></group>
+
+const Seal: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 0.8);
+  return (
+    <group ref={ref}>
+      <mesh castShadow position={[0, 0.3, 0]} scale={[1, 0.8, 2]}>
+        <capsuleGeometry args={[0.3, 0.5, 4, 8]} />
+        <meshStandardMaterial color="#475569" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.5, 0.7]}>
+        <sphereGeometry args={[0.22, 8, 8]} />
+        <meshStandardMaterial color="#475569" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.5, 0.9]}>
+        <sphereGeometry args={[0.08, 6, 6]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+    </group>
+  );
 };
-const Deer: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 1.0);
-    return <group ref={ref}><mesh castShadow position={[0, 0.6, 0]}><boxGeometry args={[0.5, 0.6, 1.0]} /><meshStandardMaterial color="#b45309" /></mesh><mesh position={[0, 1.1, 0.6]}><boxGeometry args={[0.3, 0.4, 0.5]} /><meshStandardMaterial color="#b45309" /></mesh><mesh position={[0.15, 1.4, 0.6]} rotation={[0,0,-0.3]}><cylinderGeometry args={[0.02, 0.02, 0.5]} /><meshStandardMaterial color="#f3f4f6" /></mesh><mesh position={[-0.15, 1.4, 0.6]} rotation={[0,0,0.3]}><cylinderGeometry args={[0.02, 0.02, 0.5]} /><meshStandardMaterial color="#f3f4f6" /></mesh><mesh position={[0.2, 0.3, 0.4]}><cylinderGeometry args={[0.08, 0.05, 0.6]} /><meshStandardMaterial color="#3f2e25" /></mesh><mesh position={[-0.2, 0.3, 0.4]}><cylinderGeometry args={[0.08, 0.05, 0.6]} /><meshStandardMaterial color="#3f2e25" /></mesh><mesh position={[0.2, 0.3, -0.4]}><cylinderGeometry args={[0.08, 0.05, 0.6]} /><meshStandardMaterial color="#3f2e25" /></mesh><mesh position={[-0.2, 0.3, -0.4]}><cylinderGeometry args={[0.08, 0.05, 0.6]} /><meshStandardMaterial color="#3f2e25" /></mesh></group>
+
+const Penguin: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 0.7);
+  return (
+    <group ref={ref}>
+      <mesh castShadow position={[0, 0.5, 0]}>
+        <capsuleGeometry args={[0.22, 0.4, 4, 8]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.5, 0.15]}>
+        <boxGeometry args={[0.28, 0.5, 0.08]} />
+        <meshStandardMaterial color="#f8fafc" />
+      </mesh>
+      <mesh position={[0, 0.88, 0.2]}>
+        <sphereGeometry args={[0.18, 8, 8]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[0, 0.87, 0.36]}>
+        <coneGeometry args={[0.05, 0.15, 6]} />
+        <meshStandardMaterial color="#f59e0b" />
+      </mesh>
+    </group>
+  );
 };
-const Hedgehog: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 0.5);
-    return <group ref={ref}><mesh castShadow position={[0, 0.15, 0]}><sphereGeometry args={[0.25, 6, 6]} /><meshStandardMaterial color="#57534e" flatShading /></mesh><mesh position={[0, 0.15, 0.2]}><sphereGeometry args={[0.15, 8, 8]} /><meshStandardMaterial color="#d6d3d1" /></mesh></group>
-};
-const Pig: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 0.8);
-    return <group ref={ref}><mesh castShadow position={[0, 0.3, 0]}><boxGeometry args={[0.5, 0.5, 0.8]} /><meshStandardMaterial color="#f9a8d4" /></mesh><mesh position={[0, 0.4, 0.5]}><boxGeometry args={[0.3, 0.3, 0.2]} /><meshStandardMaterial color="#f9a8d4" /></mesh><mesh position={[0, 0.4, 0.6]}><boxGeometry args={[0.1, 0.1, 0.05]} /><meshStandardMaterial color="#be185d" /></mesh></group>
-};
-const Cat: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
-    const ref = useWander(x, z, 1.2);
-    return <group ref={ref}><mesh castShadow position={[0, 0.25, 0]}><boxGeometry args={[0.3, 0.3, 0.6]} /><meshStandardMaterial color="#9ca3af" /></mesh><mesh position={[0, 0.45, 0.4]}><sphereGeometry args={[0.2, 8, 8]} /><meshStandardMaterial color="#9ca3af" /></mesh><mesh position={[0.1, 0.65, 0.4]} rotation={[0,0,-0.2]}><coneGeometry args={[0.08, 0.2, 4]} /><meshStandardMaterial color="#9ca3af" /></mesh><mesh position={[-0.1, 0.65, 0.4]} rotation={[0,0,0.2]}><coneGeometry args={[0.08, 0.2, 4]} /><meshStandardMaterial color="#9ca3af" /></mesh><mesh position={[0, 0.4, -0.3]} rotation={[0.5,0,0]}><cylinderGeometry args={[0.03, 0.03, 0.5]} /><meshStandardMaterial color="#9ca3af" /></mesh></group>
+
+const Stingray: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
+  const ref = useWander(x, z, 0.9);
+  return (
+    <group ref={ref} position={[0, 0.15, 0]}>
+      <mesh castShadow scale={[2.5, 0.2, 1.5]}>
+        <dodecahedronGeometry args={[0.4, 0]} />
+        <meshStandardMaterial color="#7c3aed" flatShading roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0, -0.8]} rotation={[0.3, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.02, 1.5, 6]} />
+        <meshStandardMaterial color="#6d28d9" />
+      </mesh>
+    </group>
+  );
 };
 
 export interface ChunkData {
@@ -667,17 +798,15 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
         }
 
         const aProps = { key: `anim-${key}`, x: finalX, y: getTerrainHeight(finalX, finalZ) + 0.02, z: finalZ };
-        if (animal === 'bear') obstacles.push(<Bear {...aProps} />);
-        if (animal === 'rabbit') obstacles.push(<Rabbit {...aProps} />);
-        if (animal === 'squirrel') obstacles.push(<Squirrel {...aProps} />);
-        if (animal === 'lamb') obstacles.push(<Lamb {...aProps} />);
-        if (animal === 'chicken') obstacles.push(<Chicken {...aProps} />);
-        if (animal === 'duck') obstacles.push(<Duck {...aProps} />);
-        if (animal === 'fox') obstacles.push(<Fox {...aProps} />);
-        if (animal === 'deer') obstacles.push(<Deer {...aProps} />);
-        if (animal === 'hedgehog') obstacles.push(<Hedgehog {...aProps} />);
-        if (animal === 'pig') obstacles.push(<Pig {...aProps} />);
-        if (animal === 'cat') obstacles.push(<Cat {...aProps} />);
+        if (animal === 'dolphin') obstacles.push(<Dolphin {...aProps} />);
+        else if (animal === 'seagull') obstacles.push(<Seagull {...aProps} />);
+        else if (animal === 'turtle') obstacles.push(<Turtle {...aProps} />);
+        else if (animal === 'pufferfish') obstacles.push(<Pufferfish {...aProps} />);
+        else if (animal === 'fish') obstacles.push(<Fish {...aProps} />);
+        else if (animal === 'crab') obstacles.push(<Crab {...aProps} />);
+        else if (animal === 'seal') obstacles.push(<Seal {...aProps} />);
+        else if (animal === 'penguin') obstacles.push(<Penguin {...aProps} />);
+        else if (animal === 'stingray') obstacles.push(<Stingray {...aProps} />);
      }
   }
 
