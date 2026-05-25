@@ -340,7 +340,7 @@ const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) =>
 };
 
 const IslandStrait: React.FC<{ z: number, x: number }> = React.memo(({ z, x }) => {
-  const ISLAND_RADIUS_X = 55;
+  const ISLAND_RADIUS_X = 18;
   const baseY = calculateBaseTerrain(x, z - 12);
 
   return (

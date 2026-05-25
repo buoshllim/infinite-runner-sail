@@ -142,16 +142,16 @@ export type ObstacleType = 'coral' | 'reef' | 'debris' | 'rock' | 'driftwood' | 
 export function getObstacleAt(x: number, z: number): string {
   if (z < 150) return 'none';
   const h = hash(x, z);
-  if (h > 0.994) return 'structure_lighthouse';
-  if (h > 0.990) return 'structure_shipwreck';
-  if (h > 0.986) return 'structure_fort';
-  if (h > 0.982) return 'tall_rock';
-  if (h > 0.978) return 'tall_coral';
-  if (h > 0.94)  return 'coral';
-  if (h > 0.90)  return 'reef';
-  if (h > 0.86)  return 'debris';
-  if (h > 0.83)  return 'rock';
-  if (h > 0.80)  return 'driftwood';
+  if (h > 0.998) return 'structure_lighthouse';
+  if (h > 0.996) return 'structure_shipwreck';
+  if (h > 0.994) return 'structure_fort';
+  if (h > 0.992) return 'tall_rock';
+  if (h > 0.990) return 'tall_coral';
+  if (h > 0.978) return 'coral';
+  if (h > 0.966) return 'reef';
+  if (h > 0.955) return 'debris';
+  if (h > 0.947) return 'rock';
+  if (h > 0.940) return 'driftwood';
   return 'none';
 }
 

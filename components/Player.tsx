@@ -289,47 +289,44 @@ export const Player: React.FC = () => {
       const isJumping = !isGrounded.current && velocity.current.y > -5; 
       const currentSpeed = velocity.current.z;
 
+      // 파도 중심잡기 애니메이션 — 달리기 대신 배 위에서 흔들리며 균형잡는 느낌
+      const swayFreq = 1.8;
+      const sway = Math.sin(time * swayFreq) * 0.12;
+      const sway2 = Math.sin(time * swayFreq * 0.7 + 1.2) * 0.06;
+
       if (isJumping) {
-        leftArmRef.current.rotation.x = MathUtils.lerp(leftArmRef.current.rotation.x, -2.5, delta * 15);
-        leftArmRef.current.rotation.z = MathUtils.lerp(leftArmRef.current.rotation.z, 0, delta * 15);
-        rightArmRef.current.rotation.x = MathUtils.lerp(rightArmRef.current.rotation.x, 1.0, delta * 15);
-        rightArmRef.current.rotation.z = MathUtils.lerp(rightArmRef.current.rotation.z, 0, delta * 15);
-        leftLegRef.current.rotation.x = MathUtils.lerp(leftLegRef.current.rotation.x, -1.2, delta * 15);
+        // 파도 점프: 팔 살짝 들고 균형잡기
+        leftArmRef.current.rotation.x = MathUtils.lerp(leftArmRef.current.rotation.x, -0.6, delta * 8);
+        leftArmRef.current.rotation.z = MathUtils.lerp(leftArmRef.current.rotation.z, 0.4, delta * 8);
+        rightArmRef.current.rotation.x = MathUtils.lerp(rightArmRef.current.rotation.x, -0.6, delta * 8);
+        rightArmRef.current.rotation.z = MathUtils.lerp(rightArmRef.current.rotation.z, -0.4, delta * 8);
+        leftLegRef.current.rotation.x = MathUtils.lerp(leftLegRef.current.rotation.x, 0.15, delta * 8);
         leftLegRef.current.rotation.z = 0;
-        rightLegRef.current.rotation.x = MathUtils.lerp(rightLegRef.current.rotation.x, 0.8, delta * 15);
+        rightLegRef.current.rotation.x = MathUtils.lerp(rightLegRef.current.rotation.x, -0.15, delta * 8);
         rightLegRef.current.rotation.z = 0;
-        playerGroup.rotation.x = MathUtils.lerp(playerGroup.rotation.x, -0.1, delta * 5);
-      } else if (currentSpeed < 0.5) {
-        // --- IDLE POSE (Speed ~0) ---
-        leftArmRef.current.rotation.x = MathUtils.lerp(leftArmRef.current.rotation.x, 0, delta * 10);
-        leftArmRef.current.rotation.z = MathUtils.lerp(leftArmRef.current.rotation.z, 0, delta * 10);
-        rightArmRef.current.rotation.x = MathUtils.lerp(rightArmRef.current.rotation.x, 0, delta * 10);
-        rightArmRef.current.rotation.z = MathUtils.lerp(rightArmRef.current.rotation.z, 0, delta * 10);
-        leftLegRef.current.rotation.x = MathUtils.lerp(leftLegRef.current.rotation.x, 0, delta * 10);
-        leftLegRef.current.rotation.z = 0;
-        rightLegRef.current.rotation.x = MathUtils.lerp(rightLegRef.current.rotation.x, 0, delta * 10);
-        rightLegRef.current.rotation.z = 0;
-        
-        bodyRef.current.position.y = MathUtils.lerp(bodyRef.current.position.y, BODY_Y, delta * 5);
-        headRef.current.position.y = MathUtils.lerp(headRef.current.position.y, HEAD_Y, delta * 5);
-        const shoulderY = BODY_Y + (BODY_H/2) - 0.1;
-        leftArmRef.current.position.y = MathUtils.lerp(leftArmRef.current.position.y, shoulderY, delta * 5);
-        rightArmRef.current.position.y = MathUtils.lerp(rightArmRef.current.position.y, shoulderY, delta * 5);
-        const hipY = LEG_Y;
-        leftLegRef.current.position.y = MathUtils.lerp(leftLegRef.current.position.y, hipY, delta * 5);
-        rightLegRef.current.position.y = MathUtils.lerp(rightLegRef.current.position.y, hipY, delta * 5);
-        playerGroup.rotation.x = MathUtils.lerp(playerGroup.rotation.x, 0, delta * 5);
+        playerGroup.rotation.x = MathUtils.lerp(playerGroup.rotation.x, -0.05, delta * 5);
       } else {
-        const runFreq = 8 + (Math.min(speed, 40) * 0.5); 
-        const amp = Math.min(1.5, 0.5 + speed * 0.02); 
-        const limbAngle = Math.sin(time * runFreq) * amp;
-        leftArmRef.current.rotation.z = 0; rightArmRef.current.rotation.z = 0; leftLegRef.current.rotation.z = 0; rightLegRef.current.rotation.z = 0;
-        leftArmRef.current.rotation.x = -limbAngle; rightArmRef.current.rotation.x = limbAngle; leftLegRef.current.rotation.x = limbAngle; rightLegRef.current.rotation.x = -limbAngle;
-        const bob = Math.abs(Math.sin(time * runFreq * 2)) * 0.05;
-        bodyRef.current.position.y = BODY_Y + bob; headRef.current.position.y = HEAD_Y + bob;
-        const shoulderY = BODY_Y + (BODY_H/2) - 0.1; leftArmRef.current.position.y = shoulderY + bob; rightArmRef.current.position.y = shoulderY + bob;
-        const hipY = LEG_Y; leftLegRef.current.position.y = hipY + bob; rightLegRef.current.position.y = hipY + bob;
-        playerGroup.rotation.x = MathUtils.lerp(playerGroup.rotation.x, 0, delta * 5);
+        // 항해 중: 파도에 맞춰 팔로 균형잡기, 다리는 거의 안 움직임
+        leftArmRef.current.rotation.x = MathUtils.lerp(leftArmRef.current.rotation.x, sway * 0.4 + sway2, delta * 3);
+        leftArmRef.current.rotation.z = MathUtils.lerp(leftArmRef.current.rotation.z, 0.15 + sway * 0.3, delta * 3);
+        rightArmRef.current.rotation.x = MathUtils.lerp(rightArmRef.current.rotation.x, -sway * 0.4 + sway2, delta * 3);
+        rightArmRef.current.rotation.z = MathUtils.lerp(rightArmRef.current.rotation.z, -0.15 - sway * 0.3, delta * 3);
+        leftLegRef.current.rotation.x = MathUtils.lerp(leftLegRef.current.rotation.x, sway * 0.05, delta * 2);
+        leftLegRef.current.rotation.z = 0;
+        rightLegRef.current.rotation.x = MathUtils.lerp(rightLegRef.current.rotation.x, -sway * 0.05, delta * 2);
+        rightLegRef.current.rotation.z = 0;
+        playerGroup.rotation.x = MathUtils.lerp(playerGroup.rotation.x, 0, delta * 3);
+
+        // 몸통 미세 흔들림
+        const bob = Math.sin(time * swayFreq * 2) * 0.015;
+        bodyRef.current.position.y = BODY_Y + bob;
+        headRef.current.position.y = HEAD_Y + bob;
+        const shoulderY = BODY_Y + (BODY_H/2) - 0.1;
+        leftArmRef.current.position.y = shoulderY + bob;
+        rightArmRef.current.position.y = shoulderY + bob;
+        const hipY = LEG_Y;
+        leftLegRef.current.position.y = hipY;
+        rightLegRef.current.position.y = hipY;
       }
       const tilt = (position.current.x - (targetX * WORLD_CONFIG.LANE_WIDTH)) * -0.05;
       playerGroup.rotation.z = MathUtils.lerp(playerGroup.rotation.z, tilt, delta * 3);
@@ -387,41 +384,46 @@ export const Player: React.FC = () => {
         <group ref={leftLegRef} position={[-0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
         <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
 
-        {/* 범선 모델 — 캐릭터 발 아래 */}
-        <group position={[0, -LEG_Y - 0.3, 0]}>
-          {/* 선체 (hull) */}
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[2.2, 0.6, 4.5]} />
+        {/* 범선 모델 — 해수면에 떠 있는 큰 배 */}
+        <group position={[0, -LEG_Y + 0.5, 0]}>
+          {/* 선체 (hull) — 해수면 위아래 걸쳐 있음 */}
+          <mesh castShadow receiveShadow position={[0, -1.0, 0]}>
+            <boxGeometry args={[4.0, 2.2, 9.0]} />
             <meshStandardMaterial color="#92400e" roughness={0.8} />
           </mesh>
           {/* 갑판 (deck) */}
-          <mesh position={[0, 0.35, 0]} receiveShadow>
-            <boxGeometry args={[2.0, 0.1, 4.2]} />
+          <mesh position={[0, 0.1, 0]} receiveShadow>
+            <boxGeometry args={[3.7, 0.2, 8.6]} />
             <meshStandardMaterial color="#a16207" roughness={0.9} />
           </mesh>
           {/* 뱃머리 (bow) */}
-          <mesh position={[0, 0.1, 2.4]} rotation={[0.3, 0, 0]} castShadow>
-            <boxGeometry args={[1.8, 0.5, 0.6]} />
+          <mesh position={[0, -0.1, 4.6]} rotation={[0.35, 0, 0]} castShadow>
+            <boxGeometry args={[3.4, 1.0, 1.0]} />
+            <meshStandardMaterial color="#78350f" roughness={0.8} />
+          </mesh>
+          {/* 선미 난간 (stern rail) */}
+          <mesh position={[0, 0.5, -4.1]} castShadow>
+            <boxGeometry args={[3.6, 0.8, 0.2]} />
             <meshStandardMaterial color="#78350f" roughness={0.8} />
           </mesh>
           {/* 돛대 (mast) */}
-          <mesh position={[0, 3.5, 0.5]} castShadow>
-            <cylinderGeometry args={[0.08, 0.1, 7, 8]} />
+          <mesh position={[0, 6.5, 0.5]} castShadow>
+            <cylinderGeometry args={[0.12, 0.15, 13, 8]} />
             <meshStandardMaterial color="#422006" roughness={0.9} />
           </mesh>
           {/* 주 돛 (main sail) */}
-          <mesh position={[0, 3.5, 0.5]} castShadow>
-            <boxGeometry args={[2.8, 4.0, 0.05]} />
+          <mesh position={[0, 6.5, 0.5]} castShadow>
+            <boxGeometry args={[4.5, 7.0, 0.06]} />
             <meshStandardMaterial color="#f8fafc" roughness={0.3} side={2} />
           </mesh>
           {/* 돛 상단 가로대 (yard) */}
-          <mesh position={[0, 5.6, 0.5]}>
-            <boxGeometry args={[3.2, 0.1, 0.1]} />
+          <mesh position={[0, 10.2, 0.5]}>
+            <boxGeometry args={[5.2, 0.18, 0.18]} />
             <meshStandardMaterial color="#422006" />
           </mesh>
           {/* 해적 깃발 */}
-          <mesh position={[0.15, 7.2, 0.5]} castShadow>
-            <boxGeometry args={[0.6, 0.4, 0.02]} />
+          <mesh position={[0.2, 13.2, 0.5]} castShadow>
+            <boxGeometry args={[0.9, 0.55, 0.03]} />
             <meshStandardMaterial color="#dc2626" />
           </mesh>
         </group>
