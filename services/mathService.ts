@@ -7,23 +7,22 @@ export function hash(x: number, z: number) {
   return h - Math.floor(h);
 }
 
-// --- RIVER LOGIC ---
-const RIVER_FREQUENCY = 450; // Meters between rivers
-const RIVER_WIDTH = 14;      // Width of the river (Jumpable with good timing/speed)
+// --- ISLAND STRAIT LOGIC ---
+// 섬 해협 구간 (원본 강 구간 대체)
+const STRAIT_FREQUENCY = 450; // 해협 간격 (원본 RIVER_FREQUENCY와 동일)
+const STRAIT_WIDTH = 14;      // 해협 폭
 
 export function getRiverInfo(z: number) {
-  // No rivers at the very start
   if (z < 200) return { isRiver: false, bedDepth: 0, centerZ: 0 };
 
-  const localZ = z % RIVER_FREQUENCY;
-  const center = RIVER_FREQUENCY / 2; // River is in the middle of the cycle
+  const localZ = z % STRAIT_FREQUENCY;
+  const center = STRAIT_FREQUENCY / 2;
   const dist = Math.abs(localZ - center);
 
-  if (dist < RIVER_WIDTH) {
-      // Parabolic or Cosine riverbed profile
-      const t = dist / RIVER_WIDTH;
-      const depth = (Math.cos(t * Math.PI / 2)) * 3.5;
-      return { isRiver: true, bedDepth: depth, centerZ: Math.floor(z / RIVER_FREQUENCY) * RIVER_FREQUENCY + center };
+  if (dist < STRAIT_WIDTH) {
+    const t = dist / STRAIT_WIDTH;
+    const depth = (Math.cos(t * Math.PI / 2)) * 3.5;
+    return { isRiver: true, bedDepth: depth, centerZ: Math.floor(z / STRAIT_FREQUENCY) * STRAIT_FREQUENCY + center };
   }
 
   return { isRiver: false, bedDepth: 0, centerZ: 0 };
@@ -43,36 +42,28 @@ export function calculateBaseTerrain(x: number, z: number): number {
   return (y1 + y2 + y3 + y4 + y5) * (TERRAIN_HEIGHT / 2.5);
 }
 
-// --- BRIDGE LOGIC ---
-const BRIDGE_LENGTH = 24; 
-const BRIDGE_WIDTH = 6;
-const BRIDGE_ARCH_HEIGHT = 3.5;
-
+// --- STRAIT PASSAGE (BUOY) LOGIC ---
+// 해협 안전 통로의 X 위치 (원본 getBridgeX와 동일 로직)
 export function getBridgeX(riverCenterZ: number) {
-    // Deterministic random X position for the bridge based on river Z
-    // Range: -10 to 10 (keeping within standard playable area)
-    const h = hash(riverCenterZ, 999);
-    return (h - 0.5) * 20; 
+  const h = hash(riverCenterZ, 999);
+  return (h - 0.5) * 20;
 }
 
-export function getBridgeInfo(x: number, z: number) {
-  // Find the closest river center relative to this Z
-  const center = Math.floor(z / RIVER_FREQUENCY) * RIVER_FREQUENCY + (RIVER_FREQUENCY / 2);
-  const dist = z - center;
-  
-  const bridgeX = getBridgeX(center);
+const PASSAGE_LENGTH = 24;
+const PASSAGE_WIDTH = 8; // 원본 BRIDGE_WIDTH 6 → 8로 약간 넓게
 
-  // Check bounds
-  if (Math.abs(dist) < BRIDGE_LENGTH / 2 && Math.abs(x - bridgeX) < BRIDGE_WIDTH / 2) {
-      // Base height at the banks (approx 12m away) at the BRIDGE'S X position
-      const baseHeight = calculateBaseTerrain(bridgeX, center - 12); 
-      
-      // Parabolic Arch: y = H * (1 - (x/R)^2)
-      const halfL = BRIDGE_LENGTH / 2;
-      const normDist = dist / halfL; // -1 to 1
-      const archY = BRIDGE_ARCH_HEIGHT * (1 - normDist * normDist); 
-      
-      return { isBridge: true, height: baseHeight + archY + 0.2 };
+export function getBridgeInfo(x: number, z: number) {
+  const center = Math.floor(z / STRAIT_FREQUENCY) * STRAIT_FREQUENCY + (STRAIT_FREQUENCY / 2);
+  const dist = z - center;
+
+  const passageX = getBridgeX(center);
+
+  if (Math.abs(dist) < PASSAGE_LENGTH / 2 && Math.abs(x - passageX) < PASSAGE_WIDTH / 2) {
+    const baseHeight = calculateBaseTerrain(passageX, center - 12);
+    const halfL = PASSAGE_LENGTH / 2;
+    const normDist = dist / halfL;
+    const archY = 1.5 * (1 - normDist * normDist); // 원본 3.5 → 1.5
+    return { isBridge: true, height: baseHeight + archY + 0.2 };
   }
   return { isBridge: false, height: -Infinity };
 }
@@ -81,7 +72,7 @@ export function getBridgeInfo(x: number, z: number) {
 export function getTerrainHeight(x: number, z: number): number {
   let h = calculateBaseTerrain(x, z);
   
-  // --- RIVER CARVING ---
+  // --- STRAIT CARVING ---
   const river = getRiverInfo(z);
   if (river.isRiver) {
       h -= river.bedDepth;
