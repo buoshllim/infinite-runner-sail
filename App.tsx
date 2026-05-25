@@ -126,10 +126,11 @@ const UI = () => {
             clearInterval(timer);
             setGameOver(true);
             setIsPlaying(false);
-            setRawSpeed(0); 
+            setRawSpeed(0);
             audioService.stopSiren();
             audioService.stopBoostWind();
-            audioService.stopMagnetSound(); 
+            audioService.stopMagnetSound();
+            audioService.stopBGM();
         }
       }, 50); 
 
@@ -168,15 +169,17 @@ const UI = () => {
   };
 
   const handleStart = (mode: GameMode) => {
-    audioService.init(); 
+    audioService.init();
+    audioService.startBGM();
     resetGame();
     setGameMode(mode);
     setIsPlaying(true);
   };
 
   const handleRestart = () => {
+      audioService.stopBGM();
       resetGame();
-      setGameMode(null); 
+      setGameMode(null);
   }
 
   const handleBoost = () => {

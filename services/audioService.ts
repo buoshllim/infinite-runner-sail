@@ -7,7 +7,30 @@ class AudioService {
   ctx: AudioContext | null = null;
   masterGain: GainNode | null = null;
   noiseBuffer: AudioBuffer | null = null;
-  
+
+  // BGM
+  bgmAudio: HTMLAudioElement | null = null;
+
+  startBGM() {
+    if (this.bgmAudio) {
+      this.bgmAudio.currentTime = 0;
+      this.bgmAudio.play().catch(() => {});
+      return;
+    }
+    const audio = new Audio('/bgm.mp3');
+    audio.loop = true;
+    audio.volume = 0.45;
+    audio.play().catch(() => {});
+    this.bgmAudio = audio;
+  }
+
+  stopBGM() {
+    if (this.bgmAudio) {
+      this.bgmAudio.pause();
+      this.bgmAudio.currentTime = 0;
+    }
+  }
+
   // Persistent nodes for looping effects
   windSource: AudioBufferSourceNode | null = null;
   windGain: GainNode | null = null;
@@ -63,22 +86,9 @@ class AudioService {
   }
 
   playJump() {
-    if (!this.ctx || !this.masterGain) return;
-    // Rising "whoosh"
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.2);
-    
-    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.2);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.2);
+    const audio = new Audio('/jump.mp3');
+    audio.volume = 0.7;
+    audio.play().catch(() => {});
   }
 
   playLand() {
@@ -87,22 +97,9 @@ class AudioService {
   }
 
   playCrash() {
-    if (!this.ctx || !this.masterGain) return;
-    // Discordant noise-like sound using sawtooth
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(100, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.3);
-    
-    gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.3);
+    const audio = new Audio('/crash.mp3');
+    audio.volume = 0.8;
+    audio.play().catch(() => {});
   }
 
   playEagle() {
@@ -155,22 +152,9 @@ class AudioService {
   }
 
   playCoin() {
-    if (!this.ctx || !this.masterGain) return;
-    // High pitched "Ping"
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1800, this.ctx.currentTime + 0.1);
-    
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.3);
+    const audio = new Audio('/coin.mp3');
+    audio.volume = 0.6;
+    audio.play().catch(() => {});
   }
 
   playWoodStep() {
