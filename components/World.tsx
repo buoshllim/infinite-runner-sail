@@ -261,123 +261,68 @@ const Coin: React.FC<{ x: number, y: number, z: number, isLarge?: boolean }> = R
     );
 });
 
-// --- EAGLE COMPONENT ---
-const Eagle: React.FC<{ x: number, y: number, z: number }> = React.memo(({ x, y, z }) => {
-    const groupRef = useRef<Group>(null);
-    const leftWingRef = useRef<Group>(null);
-    const rightWingRef = useRef<Group>(null);
-    const [hit, setHit] = useState(false);
-    
-    // 20% chance to be an aggressive, fast eagle
-    const isAggressive = useMemo(() => hash(x, z) > 0.8, [x, z]);
-    
-    const removeCoins = useGameStore(state => state.removeCoins);
-    const triggerKnockback = useGameStore(state => state.triggerKnockback);
+// --- SHARK FIN COMPONENT ---
+const SharkFin: React.FC<{ x: number, y: number, z: number }> = React.memo(({ x, y, z }) => {
+  const groupRef = useRef<Group>(null);
+  const [hit, setHit] = useState(false);
 
-    useFrame((state, delta) => {
-        if (!groupRef.current || hit) return;
-        const time = state.clock.getElapsedTime();
+  const isAggressive = useMemo(() => hash(x, z) > 0.8, [x, z]);
 
-        // Flapping Animation
-        const flap = Math.sin(time * 15) * 0.5;
-        if (leftWingRef.current) leftWingRef.current.rotation.z = flap;
-        if (rightWingRef.current) rightWingRef.current.rotation.z = -flap;
+  const removeCoins = useGameStore(state => state.removeCoins);
+  const triggerKnockback = useGameStore(state => state.triggerKnockback);
 
-        // Homing Movement
-        const player = state.scene.getObjectByName("PlayerGroup");
-        if (player) {
-            const pPos = player.position;
-            const ePos = groupRef.current.position;
-            
-            // Calculate vector to player
-            const dx = pPos.x - ePos.x;
-            const dy = (pPos.y + 1.0) - ePos.y;
-            const dz = pPos.z - ePos.z;
-            
-            // Detection Range Check
-            if (dz > -20 && dz < 220 && dy > -20) { 
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                if (dist > 0) {
-                    // Aggressive: 110
-                    // Passive: 25
-                    const speed = (isAggressive ? 110 : 25) * delta; 
-                    ePos.x += (dx / dist) * speed;
-                    ePos.y += (dy / dist) * speed;
-                    ePos.z += (dz / dist) * speed;
-                    
-                    // Face player
-                    groupRef.current.lookAt(pPos.x, pPos.y, pPos.z);
-                }
+  useFrame((state, delta) => {
+    if (!groupRef.current || hit) return;
+    const time = state.clock.getElapsedTime();
 
-                // Collision with player
-                // Hitbox radius ~1.5m
-                if (dist < 1.5) {
-                    setHit(true);
-                    groupRef.current.visible = false;
-                    audioService.playEagle();
-                    
-                    // Logic: Loose 1-5 coins, Knockback
-                    const loss = Math.floor(Math.random() * 5) + 1;
-                    removeCoins(loss);
-                    
-                    // Knockback: Drop height by 5-10m
-                    triggerKnockback(-25);
-                }
-            }
+    groupRef.current.rotation.y = Math.sin(time * 3) * 0.2;
+
+    const player = state.scene.getObjectByName("PlayerGroup");
+    if (player) {
+      const pPos = player.position;
+      const ePos = groupRef.current.position;
+
+      const dx = pPos.x - ePos.x;
+      const dz = pPos.z - ePos.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dz > -20 && dz < 200) {
+        if (dist > 0) {
+          const speed = (isAggressive ? 90 : 22) * delta;
+          ePos.x += (dx / dist) * speed;
+          ePos.z += (dz / dist) * speed;
+          ePos.y = getTerrainHeight(ePos.x, ePos.z) + 0.6;
         }
-    });
 
-    if (hit) return null;
+        if (dist < 2.5) {
+          setHit(true);
+          groupRef.current.visible = false;
+          audioService.playEagle();
 
-    return (
-        <group ref={groupRef} position={[x, y, z]}>
-            {/* Body */}
-            <mesh castShadow scale={[1, 1, 1.5]}>
-                <sphereGeometry args={[0.5, 8, 8]} />
-                <meshStandardMaterial color="#5d4037" />
-            </mesh>
-            {/* Head */}
-            <mesh position={[0, 0.3, 0.6]} castShadow>
-                <sphereGeometry args={[0.35, 8, 8]} />
-                <meshStandardMaterial color="#f3f4f6" />
-            </mesh>
-            {/* Beak */}
-            <mesh position={[0, 0.2, 0.9]} rotation={[Math.PI/2, 0, 0]}>
-                <coneGeometry args={[0.1, 0.4, 8]} />
-                <meshStandardMaterial color="#facc15" />
-            </mesh>
-            
-            {/* Left Wing */}
-            <group ref={leftWingRef} position={[-0.4, 0.2, 0]}>
-                <mesh position={[-0.8, 0, -0.2]} rotation={[0, -0.2, 0]} castShadow>
-                    <boxGeometry args={[1.6, 0.1, 0.8]} />
-                    <meshStandardMaterial color="#5d4037" />
-                </mesh>
-                <mesh position={[-1.8, 0, 0.1]} rotation={[0, 0.2, 0]}>
-                    <boxGeometry args={[1.0, 0.08, 0.6]} />
-                    <meshStandardMaterial color="#1f2937" />
-                </mesh>
-            </group>
+          const loss = Math.floor(Math.random() * 5) + 1;
+          removeCoins(loss);
+          triggerKnockback(-15);
+        }
+      }
+    }
+  });
 
-            {/* Right Wing */}
-            <group ref={rightWingRef} position={[0.4, 0.2, 0]}>
-                 <mesh position={[0.8, 0, -0.2]} rotation={[0, 0.2, 0]} castShadow>
-                    <boxGeometry args={[1.6, 0.1, 0.8]} />
-                    <meshStandardMaterial color="#5d4037" />
-                </mesh>
-                 <mesh position={[1.8, 0, 0.1]} rotation={[0, -0.2, 0]}>
-                    <boxGeometry args={[1.0, 0.08, 0.6]} />
-                    <meshStandardMaterial color="#1f2937" />
-                </mesh>
-            </group>
+  if (hit) return null;
 
-            {/* Tail */}
-            <mesh position={[0, 0, -0.8]} rotation={[-0.2, 0, 0]}>
-                <boxGeometry args={[0.6, 0.1, 0.8]} />
-                <meshStandardMaterial color="#f3f4f6" />
-            </mesh>
-        </group>
-    );
+  return (
+    <group ref={groupRef} position={[x, y, z]}>
+      {/* 등지느러미 */}
+      <mesh castShadow>
+        <coneGeometry args={[0.4, 1.8, 4]} />
+        <meshStandardMaterial color="#374151" flatShading roughness={0.5} />
+      </mesh>
+      {/* 지느러미 기부 */}
+      <mesh position={[0, -0.5, 0]} scale={[1.5, 0.3, 2.5]}>
+        <boxGeometry args={[0.6, 0.3, 1.2]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.6} />
+      </mesh>
+    </group>
+  );
 });
 
 const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) => {
@@ -842,7 +787,7 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
       for (let x = -WORLD_CONFIG.LANE_WIDTH - 30; x < WORLD_CONFIG.LANE_WIDTH + 30; x += 15) {
           const eagleInfo = getEagleInfo(x, z);
           if (eagleInfo.isEagle) {
-              eagles.push(<Eagle key={`eagle-${x}-${z}`} x={eagleInfo.x} y={eagleInfo.y} z={eagleInfo.z} />);
+              eagles.push(<SharkFin key={`shark-${x}-${z}`} x={eagleInfo.x} y={eagleInfo.y} z={eagleInfo.z} />);
           }
       }
   }
