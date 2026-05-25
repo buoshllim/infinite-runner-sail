@@ -234,9 +234,20 @@ const UI = () => {
     isDragging.current = false;
   };
 
-  const km = Math.floor(score / 1000);
-  const m = Math.floor(score % 1000);
-  const distanceDisplay = km > 0 ? `${km}km ${m}m` : `${m}m`;
+  const nm = Math.floor(score / 1000);
+  const remainder = Math.floor(score % 1000);
+  const distanceDisplay = nm > 0 ? `${nm}nm ${remainder}` : `${remainder}m`;
+
+  const [showShipwrecked, setShowShipwrecked] = useState(false);
+
+  useEffect(() => {
+    if (isGameOver) {
+      const timer = setTimeout(() => setShowShipwrecked(true), 2000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowShipwrecked(false);
+    }
+  }, [isGameOver]);
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col justify-between">
@@ -269,8 +280,8 @@ const UI = () => {
 
       <div className="p-6 w-full flex justify-between items-start text-white drop-shadow-md pointer-events-none z-20">
         <div>
-          <h1 className="text-xl font-bold tracking-wider text-green-100 opacity-80">INFINITE RUNNER</h1>
-          <p className="text-sm opacity-70">Great Nature</p>
+          <h1 className="text-xl font-bold tracking-wider text-blue-100 opacity-80">INFINITE RUNNER</h1>
+          <p className="text-sm opacity-70 text-blue-300">Age of Sail</p>
           
           {gameMode === 'TIME_ATTACK' && (
              <div className={`mt-2 text-2xl font-mono font-bold ${timeRemaining <= 30 ? 'text-red-500 animate-fast-blink' : 'text-white'}`}>
@@ -282,8 +293,8 @@ const UI = () => {
         <div className="flex flex-col items-end">
             <div className="text-2xl font-mono font-bold">{distanceDisplay}</div>
             <div className="flex items-baseline gap-2 opacity-80 mt-1">
-                <span className="text-xs uppercase">Speed</span>
-                <span className={`text-lg font-bold ${isBoosting ? 'text-red-400 animate-pulse' : ''}`}>{speed.toFixed(0)} km/h</span>
+                <span className="text-xs uppercase">속력</span>
+                <span className={`text-lg font-bold ${isBoosting ? 'text-red-400 animate-pulse' : ''}`}>{speed.toFixed(0)} kt</span>
             </div>
             <div className="flex items-baseline gap-2 text-[#FFD700] mt-1 drop-shadow-md">
                 <span className="text-xl">●</span>
@@ -295,58 +306,58 @@ const UI = () => {
       {!isPlaying && !isGameOver && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity z-50">
           <div className="text-center p-6 bg-white/10 rounded-2xl border border-white/20 shadow-2xl backdrop-blur-md flex flex-col gap-3 max-w-sm w-full mx-4">
-            <h2 className="text-3xl font-extrabold text-white mb-1 drop-shadow-lg">Infinite Runner!</h2>
-            <p className="text-green-100 mb-1 text-base">Choose your journey.</p>
-            
-            <button 
+            <h2 className="text-3xl font-extrabold text-white mb-1 drop-shadow-lg">Age of Sail</h2>
+            <p className="text-blue-100 mb-1 text-base">항해 방식을 선택하세요</p>
+
+            <button
               onClick={() => handleStart('HEALING')}
-              className="px-8 py-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-lg font-bold shadow-lg hover:scale-105 transition-transform active:scale-95"
+              className="px-8 py-3 bg-gradient-to-r from-blue-400 to-cyan-500 text-white rounded-full text-lg font-bold shadow-lg hover:scale-105 transition-transform active:scale-95"
             >
-              Healing Mode
+              ⛵ 항해 모드
             </button>
 
-            <button 
+            <button
               onClick={() => handleStart('TIME_ATTACK')}
               className="px-8 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-full text-lg font-bold shadow-lg hover:scale-105 transition-transform active:scale-95 mb-1"
             >
-              Time Attack Mode
+              ⚡ 폭풍 돌파
             </button>
 
             {/* Power-up Descriptions */}
             <div className="grid grid-cols-2 gap-3 mt-1 w-full">
                 <div className="bg-white/5 p-2 rounded-xl border border-white/10 flex flex-col items-center">
-                    <div className="text-2xl mb-1">🔥</div>
-                    <div className="font-bold text-white text-xs">BOOSTER</div>
-                    <p className="text-[10px] text-white/70 leading-tight mt-0.5">100 coins for speed-up</p>
+                    <div className="text-2xl mb-1">💨</div>
+                    <div className="font-bold text-white text-xs">폭풍 돛</div>
+                    <p className="text-[10px] text-white/70 leading-tight mt-0.5">100금화 · 10초 가속</p>
                 </div>
                 <div className="bg-white/5 p-2 rounded-xl border border-white/10 flex flex-col items-center">
-                    <div className="text-2xl mb-1">🧲</div>
-                    <div className="font-bold text-white text-xs">MAGNET</div>
-                    <p className="text-[10px] text-white/70 leading-tight mt-0.5">150 coins for magnet</p>
+                    <div className="text-2xl mb-1">🌊</div>
+                    <div className="font-bold text-white text-xs">조류</div>
+                    <p className="text-[10px] text-white/70 leading-tight mt-0.5">150금화 · 금화 흡인</p>
                 </div>
             </div>
 
-            <p className="mt-2 text-[10px] text-white/60">Drag Button to Steer • Tap Button to Jump</p>
+            <p className="mt-2 text-[10px] text-white/60">드래그: 조종 · 탭: 파도 점프</p>
           </div>
         </div>
       )}
 
-      {isGameOver && (
-         <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md pointer-events-auto z-50">
-             <div className="text-center p-10 bg-white/10 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-6 animate-bounce">
-                 <h2 className="text-6xl font-extrabold text-red-500 drop-shadow-lg">GAME OVER</h2>
-                 <div>
-                     <p className="text-white/80 text-lg">Distance Traveled</p>
-                     <p className="text-4xl font-mono font-bold text-white">{distanceDisplay}</p>
-                 </div>
-                 <button 
-                    onClick={handleRestart}
-                    className="mt-4 px-10 py-3 bg-white text-black rounded-full text-lg font-bold hover:scale-110 transition-transform"
-                 >
-                    RESTART
-                 </button>
-             </div>
-         </div>
+      {isGameOver && showShipwrecked && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md pointer-events-auto z-50">
+          <div className="text-center p-10 bg-white/10 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-6">
+            <h2 className="text-5xl font-extrabold text-blue-400 drop-shadow-lg">SHIPWRECKED!</h2>
+            <div>
+              <p className="text-white/80 text-lg">항해 거리</p>
+              <p className="text-4xl font-mono font-bold text-white">{distanceDisplay}</p>
+            </div>
+            <button
+              onClick={handleRestart}
+              className="mt-4 px-10 py-3 bg-white text-black rounded-full text-lg font-bold hover:scale-110 transition-transform"
+            >
+              다시 항해
+            </button>
+          </div>
+        </div>
       )}
 
       {!isGameOver && (
@@ -494,7 +505,7 @@ const DayNightCycle = () => {
   const timeOffset = useRef(0);
   const lastResetTrigger = useRef(resetTrigger);
   
-  const cDay = useMemo(() => new Color("#60a5fa"), []);
+  const cDay = useMemo(() => new Color("#1d4ed8"), []);
   const cSunset = useMemo(() => new Color("#f97316"), []);
   const cNight = useMemo(() => new Color("#0f172a"), []);
   const cSunrise = useMemo(() => new Color("#e879f9"), []);
@@ -567,7 +578,7 @@ const DayNightCycle = () => {
 
   return (
     <>
-      <hemisphereLight intensity={0.5} color="#87ceeb" groundColor="#a4d684" />
+      <hemisphereLight intensity={0.5} color="#87ceeb" groundColor="#1d4ed8" />
       <ambientLight intensity={0.3} />
       <directionalLight ref={lightRef} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-60} shadow-camera-right={60} shadow-camera-top={60} shadow-camera-bottom={-60} shadow-bias={-0.0005} />
       <sprite ref={sunRef} scale={[160, 160, 1]}><spriteMaterial map={sunTexture} transparent fog={false} depthWrite={false} /></sprite>
@@ -583,7 +594,7 @@ const Scene = () => (
       <DayNightCycle />
       <Player />
       <World />
-      <fog attach="fog" args={['#60a5fa', 100, 500]} />
+      <fog attach="fog" args={['#1e3a8a', 120, 480]} />
     </>
 );
 
