@@ -142,16 +142,16 @@ export type ObstacleType = 'coral' | 'reef' | 'debris' | 'rock' | 'driftwood' | 
 export function getObstacleAt(x: number, z: number): string {
   if (z < 150) return 'none';
   const h = hash(x, z);
-  if (h > 0.998) return 'structure_lighthouse';
-  if (h > 0.996) return 'structure_shipwreck';
-  if (h > 0.994) return 'structure_fort';
-  if (h > 0.992) return 'tall_rock';
-  if (h > 0.990) return 'tall_coral';
-  if (h > 0.978) return 'coral';
-  if (h > 0.966) return 'reef';
-  if (h > 0.955) return 'debris';
-  if (h > 0.947) return 'rock';
-  if (h > 0.940) return 'driftwood';
+  if (h > 0.9995) return 'structure_lighthouse';
+  if (h > 0.9990) return 'structure_shipwreck';
+  if (h > 0.9985) return 'structure_fort';
+  if (h > 0.998)  return 'tall_rock';
+  if (h > 0.9975) return 'tall_coral';
+  if (h > 0.993)  return 'coral';
+  if (h > 0.988)  return 'reef';
+  if (h > 0.984)  return 'debris';
+  if (h > 0.981)  return 'rock';
+  if (h > 0.978)  return 'driftwood';
   return 'none';
 }
 
@@ -170,15 +170,15 @@ export type AnimalType =
 export function getAnimalAt(x: number, z: number): AnimalType {
   if (z < 200) return 'none';
   const h = hash(x * 7.3, z * 3.7);
-  if (h > 0.97) return 'dolphin';
-  if (h > 0.94) return 'seagull';
-  if (h > 0.91) return 'turtle';
-  if (h > 0.88) return 'pufferfish';
-  if (h > 0.85) return 'stingray';
-  if (h > 0.82) return 'crab';
-  if (h > 0.79) return 'seal';
-  if (h > 0.76) return 'penguin';
-  if (h > 0.73) return 'fish';
+  if (h > 0.993) return 'dolphin';
+  if (h > 0.986) return 'seagull';
+  if (h > 0.979) return 'turtle';
+  if (h > 0.972) return 'pufferfish';
+  if (h > 0.965) return 'stingray';
+  if (h > 0.958) return 'crab';
+  if (h > 0.951) return 'seal';
+  if (h > 0.944) return 'penguin';
+  if (h > 0.937) return 'fish';
   return 'none';
 }
 

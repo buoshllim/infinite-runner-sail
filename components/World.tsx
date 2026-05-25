@@ -340,7 +340,7 @@ const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) =>
 };
 
 const IslandStrait: React.FC<{ z: number, x: number }> = React.memo(({ z, x }) => {
-  const ISLAND_RADIUS_X = 18;
+  const ISLAND_RADIUS_X = 11;
   const baseY = calculateBaseTerrain(x, z - 12);
 
   return (
@@ -755,16 +755,19 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
              coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 10} z={finalZ} isLarge />);
         }
 
-        const aProps = { key: `anim-${key}`, x: finalX, y: getTerrainHeight(finalX, finalZ) + 0.02, z: finalZ };
-        if (animal === 'dolphin') obstacles.push(<Dolphin {...aProps} />);
-        else if (animal === 'seagull') obstacles.push(<Seagull {...aProps} />);
-        else if (animal === 'turtle') obstacles.push(<Turtle {...aProps} />);
-        else if (animal === 'pufferfish') obstacles.push(<Pufferfish {...aProps} />);
-        else if (animal === 'fish') obstacles.push(<Fish {...aProps} />);
-        else if (animal === 'crab') obstacles.push(<Crab {...aProps} />);
-        else if (animal === 'seal') obstacles.push(<Seal {...aProps} />);
-        else if (animal === 'penguin') obstacles.push(<Penguin {...aProps} />);
-        else if (animal === 'stingray') obstacles.push(<Stingray {...aProps} />);
+        const baseY = getTerrainHeight(finalX, finalZ);
+        // 수면 위: 갈매기, 물범, 펭귄, 게 / 수면 아래: 나머지는 물속 헤엄
+        const aSurface = { key: `anim-${key}`, x: finalX, y: baseY + 0.1, z: finalZ };
+        const aUnder   = { key: `anim-${key}`, x: finalX, y: baseY - 0.5, z: finalZ };
+        if (animal === 'dolphin')    obstacles.push(<Dolphin    {...aUnder} />);
+        else if (animal === 'seagull')   obstacles.push(<Seagull    {...aSurface} />);
+        else if (animal === 'turtle')    obstacles.push(<Turtle     {...aUnder} />);
+        else if (animal === 'pufferfish')obstacles.push(<Pufferfish {...aUnder} />);
+        else if (animal === 'fish')      obstacles.push(<Fish       {...aUnder} />);
+        else if (animal === 'crab')      obstacles.push(<Crab       {...aSurface} />);
+        else if (animal === 'seal')      obstacles.push(<Seal       {...aSurface} />);
+        else if (animal === 'penguin')   obstacles.push(<Penguin    {...aSurface} />);
+        else if (animal === 'stingray')  obstacles.push(<Stingray   {...aUnder} />);
      }
   }
 
@@ -849,7 +852,28 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
       posAttr.setY(i, h);
   }
   terrainGeo.computeVertexNormals();
-  
+
+  // 반투명 수면 — 청크 중앙 기준 baseY + 1.2에 평평한 수면 레이어
+  const waterBaseY = calculateBaseTerrain(0, centerZ) + 1.2;
+  water.push(
+    <mesh
+      key="water-surface"
+      position={[0, waterBaseY, centerZ]}
+      rotation={[-Math.PI / 2, 0, 0]}
+      renderOrder={1}
+    >
+      <planeGeometry args={[120, WORLD_CONFIG.CHUNK_SIZE]} />
+      <meshStandardMaterial
+        color="#38bdf8"
+        transparent
+        opacity={0.38}
+        roughness={0.02}
+        metalness={0.15}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+
   return { obstacles, clouds, water, bridges, coins, eagles, flowerMatrices, flowerColors, flowerCount, rockMatrices, rockCount, terrainGeometry: terrainGeo };
 };
 
@@ -881,8 +905,7 @@ const WorldChunk = React.memo(({ index }: { index: number }) => {
   return (
     <group>
         <mesh position={[0, 0, index * WORLD_CONFIG.CHUNK_SIZE + WORLD_CONFIG.CHUNK_SIZE / 2]} geometry={terrainGeometry || undefined} receiveShadow>
-            {/* was: color="#86efac" roughness={1} */}
-            <meshStandardMaterial color="#1d4ed8" roughness={0.3} metalness={0.4} flatShading={true} side={DoubleSide} />
+            <meshStandardMaterial color="#0c4a6e" roughness={0.4} metalness={0.3} flatShading={true} side={DoubleSide} />
         </mesh>
         {obstacles}
         {clouds}

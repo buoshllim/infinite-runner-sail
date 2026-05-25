@@ -385,7 +385,7 @@ export const Player: React.FC = () => {
         <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
 
         {/* 범선 모델 — 해수면에 떠 있는 큰 배 */}
-        <group position={[0, -LEG_Y + 0.5, 0]}>
+        <group position={[0, -LEG_Y + 1.4, 0]}>
           {/* 선체 (hull) — 해수면 위아래 걸쳐 있음 */}
           <mesh castShadow receiveShadow position={[0, -1.0, 0]}>
             <boxGeometry args={[4.0, 2.2, 9.0]} />
