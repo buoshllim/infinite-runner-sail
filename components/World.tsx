@@ -10,15 +10,15 @@ import { audioService } from '../services/audioService';
 const tempObject = new Object3D();
 const tempColor = new Color();
 
-// --- FLOWER COLORS (Green Palette for Lush Look) ---
-const FLOWER_COLORS = [
-  "#4ade80", "#22c55e", "#16a34a", "#15803d",
-  "#bef264", "#a3e635", "#84cc16", "#365314"
+// --- FOAM COLORS (Ocean Foam Palette) ---
+const FOAM_COLORS = [
+  "#e0f2fe", "#bae6fd", "#7dd3fc", "#ffffff",
+  "#f0f9ff", "#dbeafe", "#eff6ff", "#cffafe"
 ];
 
 // --- MATERIALS ---
 const FlowerMaterial = new MeshLambertMaterial({
-  color: "#86efac",
+  color: "#e0f2fe",
   emissive: "#166534",
   emissiveIntensity: 0.3,
   vertexColors: true,
@@ -549,12 +549,6 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
       const r = getRiverInfo(z);
       if (r.isRiver && r.centerZ && !riversFound.has(r.centerZ)) {
           riversFound.add(r.centerZ);
-          water.push(
-            <mesh key={`water-${r.centerZ}`} position={[0, -0.5, r.centerZ]} rotation={[-Math.PI/2, 0, 0]} receiveShadow>
-                 <planeGeometry args={[150, 15]} />
-                 <meshStandardMaterial color="#60a5fa" transparent opacity={0.8} roughness={0.1} metalness={0.5} side={DoubleSide} />
-            </mesh>
-          );
           const bx = getBridgeX(r.centerZ);
           bridges.push(<Bridge key={`bridge-${r.centerZ}`} z={r.centerZ} x={bx} />);
           
@@ -731,8 +725,8 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
              for(let k=0; k<16; k++) {
                  flowerMatrices[flowerCount * 16 + k] = tempObject.matrix.elements[k];
              }
-             const colorIdx = Math.floor((h * 100) % FLOWER_COLORS.length);
-             tempColor.set(FLOWER_COLORS[colorIdx]);
+             const colorIdx = Math.floor((h * 100) % FOAM_COLORS.length);
+             tempColor.set(FOAM_COLORS[colorIdx]);
              tempColor.offsetHSL(0, 0, 0.15); 
              flowerColors[flowerCount * 3 + 0] = tempColor.r;
              flowerColors[flowerCount * 3 + 1] = tempColor.g;
@@ -802,7 +796,8 @@ const WorldChunk = React.memo(({ index }: { index: number }) => {
   return (
     <group>
         <mesh position={[0, 0, index * WORLD_CONFIG.CHUNK_SIZE + WORLD_CONFIG.CHUNK_SIZE / 2]} geometry={terrainGeometry || undefined} receiveShadow>
-            <meshStandardMaterial color="#86efac" roughness={1} flatShading={true} side={DoubleSide} />
+            {/* was: color="#86efac" roughness={1} */}
+            <meshStandardMaterial color="#1d4ed8" roughness={0.3} metalness={0.4} flatShading={true} side={DoubleSide} />
         </mesh>
         {obstacles}
         {clouds}
