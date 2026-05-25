@@ -55,6 +55,45 @@ const CloudMaterial = new MeshStandardMaterial({
     depthWrite: false
 });
 
+// --- OCEAN SURFACE MATERIAL (animated waves + foam) ---
+const OceanTerrainMaterial = new MeshStandardMaterial({
+  color: "#0284c7",
+  transparent: true,
+  opacity: 0.88,
+  roughness: 0.06,
+  metalness: 0.25,
+  emissive: "#0ea5e9",
+  emissiveIntensity: 0.18,
+  side: DoubleSide,
+});
+
+OceanTerrainMaterial.onBeforeCompile = (shader) => {
+  shader.uniforms.uTime = { value: 0 };
+  shader.vertexShader = `uniform float uTime;\nvarying float vCrest;\n${shader.vertexShader}`;
+  shader.vertexShader = shader.vertexShader.replace(
+    '#include <begin_vertex>',
+    `
+    #include <begin_vertex>
+    float rip = sin(position.x * 0.85 + uTime * 3.1) * 0.11
+              + cos(position.z * 0.65 + uTime * 2.4) * 0.08
+              + sin((position.x + position.z) * 0.4 + uTime * 1.9) * 0.05;
+    transformed.y += rip;
+    vCrest = transformed.y;
+    `
+  );
+  shader.fragmentShader = `varying float vCrest;\n${shader.fragmentShader}`;
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <dithering_fragment>',
+    `
+    #include <dithering_fragment>
+    float foam = smoothstep(0.28, 0.62, vCrest);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.95, 0.97, 1.0), foam * 0.78);
+    gl_FragColor.a   = mix(gl_FragColor.a,   1.0, foam * 0.3);
+    `
+  );
+  OceanTerrainMaterial.userData.shader = shader;
+};
+
 // --- COMPONENTS ---
 
 // --- SEA OBSTACLE COMPONENTS ---
@@ -339,85 +378,106 @@ const TallRock: React.FC<{ x: number, y: number, z: number }> = ({ x, y, z }) =>
     );
 };
 
+// 섬 하나를 여러 바위 덩어리 조합으로 그리는 헬퍼
+const IslandMass: React.FC<{ side: number; seed: number }> = ({ side, seed }) => {
+  const h0 = hash(seed, 10);
+  const h1 = hash(seed, 11);
+  const h2 = hash(seed, 12);
+  const h3 = hash(seed, 13);
+  const h4 = hash(seed, 14);
+  const h5 = hash(seed, 15);
+
+  // 섬 유형: 0=납작한 암반, 1=뾰족한 절벽, 2=분산된 암초군
+  const type = Math.floor(h0 * 3);
+  const rot = h1 * Math.PI * 2;
+
+  const baseX = side * (16 + h2 * 6);
+  const baseZ = h3 * 10 - 5;
+
+  const colors = ["#1a4d2e", "#15803d", "#166534", "#0f5132", "#14532d"];
+  const c0 = colors[Math.floor(h4 * colors.length)];
+  const c1 = colors[Math.floor(h5 * colors.length)];
+
+  if (type === 0) {
+    // 납작하고 넓은 섬
+    return (
+      <group position={[baseX, 0, baseZ]} rotation={[0, rot, 0]}>
+        <mesh castShadow receiveShadow scale={[1.6 + h1 * 0.8, 0.32 + h2 * 0.2, 1.2 + h3 * 0.7]}>
+          <dodecahedronGeometry args={[8, 0]} />
+          <meshStandardMaterial color={c0} roughness={1} flatShading />
+        </mesh>
+        <mesh position={[5, 0.8, 2]} castShadow scale={[0.5, 0.4 + h4 * 0.3, 0.6]}>
+          <dodecahedronGeometry args={[5, 0]} />
+          <meshStandardMaterial color={c1} roughness={1} flatShading />
+        </mesh>
+        <mesh position={[-4, 0.5, -4]} castShadow scale={[0.6, 0.25, 0.5]}>
+          <dodecahedronGeometry args={[5, 0]} />
+          <meshStandardMaterial color={c0} roughness={1} flatShading />
+        </mesh>
+      </group>
+    );
+  } else if (type === 1) {
+    // 뾰족한 절벽 형태
+    return (
+      <group position={[baseX, 0, baseZ]} rotation={[0, rot, 0]}>
+        <mesh castShadow receiveShadow scale={[0.7 + h1 * 0.4, 0.4 + h2 * 0.3, 0.9 + h3 * 0.5]}>
+          <dodecahedronGeometry args={[6, 0]} />
+          <meshStandardMaterial color={c0} roughness={1} flatShading />
+        </mesh>
+        <mesh position={[1, 4 + h4 * 5, 0]} castShadow scale={[0.3, 1.5 + h5 * 1.0, 0.3]}>
+          <dodecahedronGeometry args={[4, 0]} />
+          <meshStandardMaterial color="#0f5132" roughness={0.9} flatShading />
+        </mesh>
+        <mesh position={[-3, 2 + h2 * 2, 3]} castShadow scale={[0.35, 0.8 + h1 * 0.6, 0.35]}>
+          <dodecahedronGeometry args={[3.5, 0]} />
+          <meshStandardMaterial color={c1} roughness={0.9} flatShading />
+        </mesh>
+        <mesh position={[4, 0.5, -3]} castShadow scale={[0.6, 0.2, 0.5]}>
+          <dodecahedronGeometry args={[4, 0]} />
+          <meshStandardMaterial color={c0} roughness={1} flatShading />
+        </mesh>
+      </group>
+    );
+  } else {
+    // 흩어진 암초군
+    return (
+      <group position={[baseX, 0, baseZ]} rotation={[0, rot, 0]}>
+        <mesh castShadow receiveShadow scale={[1.0 + h1 * 0.5, 0.28 + h2 * 0.18, 0.9 + h3 * 0.5]} position={[0, 0, 0]}>
+          <dodecahedronGeometry args={[6, 0]} />
+          <meshStandardMaterial color={c0} roughness={1} flatShading />
+        </mesh>
+        <mesh position={[7 + h4 * 3, 0.4, 2]} castShadow scale={[0.5, 0.2, 0.4]}>
+          <dodecahedronGeometry args={[4, 0]} />
+          <meshStandardMaterial color={c1} roughness={1} flatShading />
+        </mesh>
+        <mesh position={[-5, 0.3, 5 + h5 * 3]} castShadow scale={[0.4, 0.18, 0.5]}>
+          <dodecahedronGeometry args={[4, 0]} />
+          <meshStandardMaterial color={c0} roughness={1} flatShading />
+        </mesh>
+        <mesh position={[3, 0.6, -6 - h3 * 2]} castShadow scale={[0.35, 0.22, 0.4]}>
+          <dodecahedronGeometry args={[3, 0]} />
+          <meshStandardMaterial color={c1} roughness={1} flatShading />
+        </mesh>
+      </group>
+    );
+  }
+};
+
 const IslandStrait: React.FC<{ z: number, x: number }> = React.memo(({ z, x }) => {
-  const ISLAND_RADIUS_X = 11;
   const baseY = calculateBaseTerrain(x, z - 12);
+
+  const hConfig = hash(z, 99);
+  // 0~0.33 → 왼쪽만, 0.33~0.66 → 오른쪽만, 0.66~1 → 양쪽 (단 Z 오프셋 달리)
+  const config = hConfig < 0.33 ? 'left' : hConfig < 0.66 ? 'right' : 'both';
 
   return (
     <group position={[0, baseY, z]}>
-      {/* 왼쪽 섬 */}
-      <group position={[-ISLAND_RADIUS_X - 5, 0, 0]}>
-        <mesh castShadow receiveShadow>
-          <sphereGeometry args={[ISLAND_RADIUS_X, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#15803d" roughness={1} flatShading />
-        </mesh>
-        {/* 야자수 1 */}
-        <mesh position={[8, 5, 5]} castShadow>
-          <cylinderGeometry args={[0.3, 0.5, 10, 7]} />
-          <meshStandardMaterial color="#4a3728" roughness={0.9} />
-        </mesh>
-        <mesh position={[8, 10.5, 5]} castShadow>
-          <sphereGeometry args={[4, 7, 5]} />
-          <meshStandardMaterial color="#166534" flatShading />
-        </mesh>
-        {/* 야자수 2 */}
-        <mesh position={[-5, 4, -4]} castShadow>
-          <cylinderGeometry args={[0.25, 0.45, 8, 7]} />
-          <meshStandardMaterial color="#4a3728" roughness={0.9} />
-        </mesh>
-        <mesh position={[-5, 8.5, -4]} castShadow>
-          <sphereGeometry args={[3.5, 7, 5]} />
-          <meshStandardMaterial color="#15803d" flatShading />
-        </mesh>
-      </group>
-
-      {/* 오른쪽 섬 */}
-      <group position={[ISLAND_RADIUS_X + 5, 0, 0]}>
-        <mesh castShadow receiveShadow>
-          <sphereGeometry args={[ISLAND_RADIUS_X, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#15803d" roughness={1} flatShading />
-        </mesh>
-        {/* 야자수 */}
-        <mesh position={[-6, 4, 3]} castShadow>
-          <cylinderGeometry args={[0.3, 0.5, 9, 7]} />
-          <meshStandardMaterial color="#4a3728" roughness={0.9} />
-        </mesh>
-        <mesh position={[-6, 9, 3]} castShadow>
-          <sphereGeometry args={[3.8, 7, 5]} />
-          <meshStandardMaterial color="#166534" flatShading />
-        </mesh>
-      </group>
-
-      {/* 부표 — 왼쪽(빨강) */}
-      {([-10, -3, 3, 10] as number[]).map((dz, i) => (
-        <group key={i} position={[x - 5, 0.8, dz]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 1.6, 8]} />
-            <meshStandardMaterial color="#dc2626" />
-          </mesh>
-          <mesh position={[0, 1.2, 0]}>
-            <sphereGeometry args={[0.4, 8, 8]} />
-            <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={0.3} />
-          </mesh>
-          <mesh position={[0, -0.9, 0]}>
-            <cylinderGeometry args={[0.05, 0.05, 1, 6]} />
-            <meshStandardMaterial color="#374151" />
-          </mesh>
-        </group>
-      ))}
-      {/* 부표 — 오른쪽(초록) */}
-      {([-10, -3, 3, 10] as number[]).map((dz, i) => (
-        <group key={`r-${i}`} position={[x + 5, 0.8, dz]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 1.6, 8]} />
-            <meshStandardMaterial color="#16a34a" />
-          </mesh>
-          <mesh position={[0, 1.2, 0]}>
-            <sphereGeometry args={[0.4, 8, 8]} />
-            <meshStandardMaterial color="#16a34a" emissive="#16a34a" emissiveIntensity={0.3} />
-          </mesh>
-        </group>
-      ))}
+      {(config === 'left' || config === 'both') && (
+        <IslandMass side={-1} seed={Math.floor(z / 450) * 7 + 1} />
+      )}
+      {(config === 'right' || config === 'both') && (
+        <IslandMass side={1} seed={Math.floor(z / 450) * 7 + 3} />
+      )}
     </group>
   );
 });
@@ -701,45 +761,67 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
              continue;
         }
 
-        const h = hash(x, z);
-        const offsetX = (h - 0.5) * 2;
-        const offsetZ = (hash(z, x) - 0.5) * 2;
+        const h  = hash(x, z);
+        const h2 = hash(x * 1.7, z * 2.3);
+        const h3 = hash(z * 3.1, x * 0.9);
+        // 충돌 감지와 일치하는 오프셋 (±1)
+        const offsetX = (h  - 0.5) * 2;
+        const offsetZ = (h2 - 0.5) * 2;
         const finalX = x + offsetX;
         const finalZ = z + offsetZ;
         if (getRiverInfo(finalZ).isRiver) continue;
         const type = getObstacleAt(x, z);
         const animal = getAnimalAt(x, z);
         const key = `obj-${Math.round(x)}-${Math.round(z)}`;
-        
+        const rotY = h3 * Math.PI * 2;
+        const scaleV = 0.75 + h2 * 0.6;
+
         if (type === 'coral') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<Coral key={key} x={finalX} y={y} z={finalZ} />);
+             obstacles.push(
+               <group key={key} position={[finalX, y, finalZ]} rotation={[0, rotY, 0]} scale={scaleV}>
+                 <Coral x={0} y={0} z={0} />
+               </group>
+             );
         } else if (type === 'reef') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<Reef key={key} x={finalX} y={y} z={finalZ} />);
+             obstacles.push(
+               <group key={key} position={[finalX, y, finalZ]} rotation={[0, rotY, 0]} scale={scaleV}>
+                 <Reef x={0} y={0} z={0} />
+               </group>
+             );
         } else if (type === 'debris' || type === 'driftwood') {
              const y = getTerrainHeight(finalX, finalZ);
+             const tilt = (h3 - 0.5) * 0.4;
              obstacles.push(
-                 <mesh key={key} position={[finalX, y + 0.2, finalZ]} rotation={[0, h * 3, Math.PI / 2]} castShadow>
-                     <cylinderGeometry args={[0.25, 0.25, 1.5, 8]} />
-                     <meshStandardMaterial color="#78350f" roughness={0.9} />
+                 <mesh key={key} position={[finalX, y + 0.2, finalZ]} rotation={[tilt, rotY, Math.PI / 2 + tilt]} castShadow>
+                     <cylinderGeometry args={[0.2 + h * 0.15, 0.25 + h2 * 0.1, 1.2 + h3 * 1.5, 7]} />
+                     <meshStandardMaterial color={h > 0.5 ? "#78350f" : "#92400e"} roughness={0.9} />
                  </mesh>
              );
         } else if (type === 'rock') {
              const y = getTerrainHeight(finalX, finalZ);
              obstacles.push(
-                 <mesh key={key} position={[finalX, y + 0.3, finalZ]} castShadow>
-                     <dodecahedronGeometry args={[0.5 + h * 0.3, 0]} />
-                     <meshStandardMaterial color="#57534e" flatShading />
+                 <mesh key={key} position={[finalX, y + 0.2, finalZ]} rotation={[h3 * 0.3, rotY, h2 * 0.2]} castShadow scale={scaleV}>
+                     <dodecahedronGeometry args={[0.5 + h * 0.5, 0]} />
+                     <meshStandardMaterial color={h > 0.5 ? "#57534e" : "#44403c"} flatShading />
                  </mesh>
              );
         } else if (type === 'tall_coral') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<Coral key={key} x={finalX} y={y} z={finalZ} />);
+             obstacles.push(
+               <group key={key} position={[finalX, y, finalZ]} rotation={[0, rotY, 0]} scale={scaleV}>
+                 <Coral x={0} y={0} z={0} />
+               </group>
+             );
              coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 5} z={finalZ} isLarge />);
         } else if (type === 'tall_rock') {
              const y = getTerrainHeight(finalX, finalZ);
-             obstacles.push(<Reef key={key} x={finalX} y={y} z={finalZ} />);
+             obstacles.push(
+               <group key={key} position={[finalX, y, finalZ]} rotation={[0, rotY, 0]} scale={scaleV}>
+                 <Reef x={0} y={0} z={0} />
+               </group>
+             );
              coins.push(<Coin key={`large-coin-${key}`} x={finalX} y={y + 5} z={finalZ} isLarge />);
         } else if (type === 'structure_shipwreck') {
              const y = getTerrainHeight(finalX, finalZ);
@@ -756,7 +838,6 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
         }
 
         const baseY = getTerrainHeight(finalX, finalZ);
-        // 수면 위: 갈매기, 물범, 펭귄, 게 / 수면 아래: 나머지는 물속 헤엄
         const aSurface = { key: `anim-${key}`, x: finalX, y: baseY + 0.1, z: finalZ };
         const aUnder   = { key: `anim-${key}`, x: finalX, y: baseY - 0.5, z: finalZ };
         if (animal === 'dolphin')    obstacles.push(<Dolphin    {...aUnder} />);
@@ -853,27 +934,6 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
   }
   terrainGeo.computeVertexNormals();
 
-  // 반투명 수면 — 청크 중앙 기준 baseY + 1.2에 평평한 수면 레이어
-  const waterBaseY = calculateBaseTerrain(0, centerZ) + 1.2;
-  water.push(
-    <mesh
-      key="water-surface"
-      position={[0, waterBaseY, centerZ]}
-      rotation={[-Math.PI / 2, 0, 0]}
-      renderOrder={1}
-    >
-      <planeGeometry args={[120, WORLD_CONFIG.CHUNK_SIZE]} />
-      <meshStandardMaterial
-        color="#38bdf8"
-        transparent
-        opacity={0.38}
-        roughness={0.02}
-        metalness={0.15}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-
   return { obstacles, clouds, water, bridges, coins, eagles, flowerMatrices, flowerColors, flowerCount, rockMatrices, rockCount, terrainGeometry: terrainGeo };
 };
 
@@ -881,6 +941,12 @@ const WorldChunk = React.memo(({ index }: { index: number }) => {
   const { obstacles, clouds, water, bridges, coins, eagles, flowerMatrices, flowerColors, flowerCount, rockMatrices, rockCount, terrainGeometry } = useMemo(() => generateChunkData(index), [index]);
   const flowerMeshRef = useRef<InstancedMesh>(null);
   const rockMeshRef = useRef<InstancedMesh>(null);
+
+  useFrame(({ clock }) => {
+    if (OceanTerrainMaterial.userData.shader) {
+      OceanTerrainMaterial.userData.shader.uniforms.uTime.value = clock.getElapsedTime();
+    }
+  });
 
   useLayoutEffect(() => {
     if (flowerMeshRef.current && flowerCount > 0) {
@@ -904,9 +970,7 @@ const WorldChunk = React.memo(({ index }: { index: number }) => {
 
   return (
     <group>
-        <mesh position={[0, 0, index * WORLD_CONFIG.CHUNK_SIZE + WORLD_CONFIG.CHUNK_SIZE / 2]} geometry={terrainGeometry || undefined} receiveShadow>
-            <meshStandardMaterial color="#0c4a6e" roughness={0.4} metalness={0.3} flatShading={true} side={DoubleSide} />
-        </mesh>
+        <mesh position={[0, 0, index * WORLD_CONFIG.CHUNK_SIZE + WORLD_CONFIG.CHUNK_SIZE / 2]} geometry={terrainGeometry || undefined} receiveShadow material={OceanTerrainMaterial} />
         {obstacles}
         {clouds}
         {water}

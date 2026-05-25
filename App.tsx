@@ -51,6 +51,52 @@ const UI = () => {
   const speedIntervalRef = useRef<number | null>(null);
   const pressStartTimeRef = useRef<number>(0);
 
+  const keysRef = useRef<Set<string>>(new Set());
+  const kbSteerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const onDown = (e: KeyboardEvent) => {
+      if (!isPlaying || isGameOver) return;
+      keysRef.current.add(e.code);
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        triggerJump();
+      }
+      if (['ArrowLeft','ArrowRight','KeyA','KeyD','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
+      if (kbSteerRef.current === null) {
+        const loop = () => {
+          const keys = keysRef.current;
+          const left  = keys.has('ArrowLeft') || keys.has('KeyA');
+          const right = keys.has('ArrowRight') || keys.has('KeyD');
+          const up    = keys.has('ArrowUp');
+          const down  = keys.has('ArrowDown');
+          if (left || right) {
+            const dir = right ? -1 : 1;
+            currentTargetX.current = Math.max(-1, Math.min(1, currentTargetX.current + dir * 0.03));
+            setTargetX(currentTargetX.current);
+          }
+          if (up)   updateSpeed(0.15);
+          if (down) updateSpeed(-0.15);
+          if (left || right || up || down) {
+            kbSteerRef.current = requestAnimationFrame(loop);
+          } else {
+            kbSteerRef.current = null;
+          }
+        };
+        kbSteerRef.current = requestAnimationFrame(loop);
+      }
+    };
+    const onUp = (e: KeyboardEvent) => {
+      keysRef.current.delete(e.code);
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+    };
+  }, [isPlaying, isGameOver, triggerJump, setTargetX, updateSpeed]);
+
   const [lossDisplay, setLossDisplay] = useState<{amount: number, key: number} | null>(null);
 
   useEffect(() => {
@@ -265,7 +311,7 @@ const UI = () => {
         {lossDisplay && (
             <div key={lossDisplay.key} className="text-xl font-bold text-red-500 drop-shadow-md flex items-center gap-1">
                 <span>-{lossDisplay.amount}</span>
-                <span className="text-lg">🪙</span>
+                <span className="text-xl text-[#FFD700]">●</span>
             </div>
         )}
       </div>
@@ -398,7 +444,7 @@ const UI = () => {
                             : 'bg-gradient-to-tr from-indigo-500 to-purple-400 active:scale-90 hover:scale-110 animate-pulse'}
                     `}
                 >
-                    <span className="text-3xl filter drop-shadow-md">🧲</span>
+                    <span className="text-3xl filter drop-shadow-md">🌊</span>
                 </button>
             )}
 
@@ -416,7 +462,7 @@ const UI = () => {
                             : 'bg-gradient-to-tr from-red-600 to-yellow-400 animate-bounce active:scale-90 hover:scale-110'}
                     `}
                 >
-                    <span className="text-2xl filter drop-shadow-md">🔥</span>
+                    <span className="text-2xl filter drop-shadow-md">💨</span>
                 </button>
             )}
 

@@ -1,9 +1,9 @@
 
 import React, { useRef, forwardRef, useImperativeHandle, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector3, Group, Mesh, MathUtils, Object3D, InstancedMesh, DynamicDrawUsage, Color } from 'three';
+import { Vector3, Group, Mesh, MathUtils, Object3D, InstancedMesh, DynamicDrawUsage, Color, Shape, ExtrudeGeometry, ShapeGeometry } from 'three';
 import { WORLD_CONFIG } from '../types';
-import { getTerrainHeight, getObstacleAt, getCloudInfo, getBridgeInfo } from '../services/mathService';
+import { getTerrainHeight, getObstacleAt, getCloudInfo, getBridgeInfo, getRiverInfo, hash } from '../services/mathService';
 import { useGameStore } from '../store';
 import { audioService } from '../services/audioService';
 
@@ -117,6 +117,7 @@ export const Player: React.FC = () => {
   const resetJump = useGameStore(state => state.resetJump);
   const targetX = useGameStore(state => state.targetX);
   const speed = useGameStore(state => state.speed);
+  const setRawSpeed = useGameStore(state => state.setRawSpeed);
   const cameraDragOffset = useGameStore(state => state.cameraDragOffset);
   const resetTrigger = useGameStore(state => state.resetTrigger);
   const knockbackForceY = useGameStore(state => state.knockbackForceY); 
@@ -197,6 +198,26 @@ export const Player: React.FC = () => {
         platformHeight = Math.max(platformHeight, bridgeInfo.height);
     }
 
+    // 섬 충돌: 해협 구간에서 양쪽 섬 경계(|X| > 12) 근처에 닿으면 히트
+    const straitInfo = getRiverInfo(position.current.z);
+    if (straitInfo.isRiver) {
+      const absX = Math.abs(position.current.x);
+      const islandEdge = 12.5;
+      if (absX > islandEdge) {
+        const islandKey = `island-${Math.round(straitInfo.centerZ)}`;
+        if (lastHitKey.current !== islandKey) {
+          audioService.playCrash();
+          shakeIntensity.current = 0.8;
+          lastHitKey.current = islandKey;
+          velocity.current.z *= 0.80;
+          setRawSpeed(speed * 0.80);
+          removeCoins(2);
+        }
+        // 섬 안으로 더 들어가지 않도록 X 위치 클램프
+        position.current.x = Math.sign(position.current.x) * islandEdge;
+      }
+    }
+
     const cloudInfo = getCloudInfo(position.current.x, position.current.z);
     if (cloudInfo.isCloud) {
         const dx = position.current.x - cloudInfo.x;
@@ -210,54 +231,69 @@ export const Player: React.FC = () => {
         }
     }
 
-    const gridX = Math.round(position.current.x / 4) * 4;
-    const gridZ = Math.round(position.current.z / 8) * 8;
-    const obsType = getObstacleAt(gridX, gridZ);
-    if (obsType !== 'none') {
-      const dx = position.current.x - gridX;
-      const dz = position.current.z - gridZ;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      let hitRadius = 1.0;
-      let isLarge = false;
-      if (obsType === 'reef') hitRadius = 1.0;
-      if (obsType === 'coral') hitRadius = 0.6;
-      if (obsType === 'debris' || obsType === 'driftwood') hitRadius = 0.5;
-      if (obsType === 'rock') hitRadius = 0.7;
-      if (obsType.startsWith('structure')) { hitRadius = 2.5; isLarge = true; }
-      if (obsType === 'tall_coral' || obsType === 'tall_rock') { hitRadius = 2.0; isLarge = true; }
+    // 생성 루프와 동일한 step=3 격자로 주변 3×3 포인트 전부 체크
+    const GRID_STEP = 3;
+    const gx0 = Math.round(position.current.x / GRID_STEP) * GRID_STEP;
+    const gz0 = Math.round(position.current.z / GRID_STEP) * GRID_STEP;
 
-      if (dist < hitRadius) {
-         const obsBaseY = getTerrainHeight(gridX, gridZ);
-         let obsHeight = 0; let obsColor = "#57534e";
-         if (obsType === 'coral') { obsHeight = 2.5; obsColor = "#f97316"; }
-         else if (obsType === 'reef') { obsHeight = 1.5; obsColor = "#44403c"; }
-         else if (obsType === 'tall_coral') { obsHeight = 2.5; obsColor = "#fb923c"; }
-         else if (obsType === 'tall_rock') { obsHeight = 2.5; obsColor = "#57534e"; }
-         else if (obsType === 'structure_shipwreck') { obsHeight = 6; obsColor = "#92400e"; }
-         else if (obsType === 'structure_lighthouse') { obsHeight = 12; obsColor = "#f8fafc"; }
-         else if (obsType === 'structure_fort') { obsHeight = 8; obsColor = "#57534e"; }
-         else if (obsType === 'debris' || obsType === 'driftwood') { obsHeight = 0.5; obsColor = "#78350f"; }
-         else if (obsType === 'rock') { obsHeight = 1.0; obsColor = "#57534e"; }
+    for (let gx = gx0 - GRID_STEP; gx <= gx0 + GRID_STEP; gx += GRID_STEP) {
+      for (let gz = gz0 - GRID_STEP; gz <= gz0 + GRID_STEP; gz += GRID_STEP) {
+        const obsType = getObstacleAt(gx, gz);
+        if (obsType === 'none') continue;
 
-         const topY = obsBaseY + obsHeight;
-         if (position.current.y >= topY - 0.5) { platformHeight = Math.max(platformHeight, topY); } 
-         else if (position.current.y < topY - 0.5 && dist < (hitRadius * 0.8)) {
-           const currentObsKey = `${gridX},${gridZ}`;
-           if (lastHitKey.current !== currentObsKey) {
-               audioService.playCrash();
-               shakeIntensity.current = 0.8; 
-               debrisRef.current?.explode(gridX, gridZ, obsColor, obsHeight);
-               lastHitKey.current = currentObsKey;
-               
-               // Coin Loss Logic
-               if (isLarge) {
-                   const loss = Math.floor(Math.random() * 2) + 2; // 2 or 3
-                   removeCoins(loss);
-               } else {
-                   removeCoins(1);
-               }
-           }
-         }
+        const oh  = hash(gx, gz);
+        const oh2 = hash(gx * 1.7, gz * 2.3);
+        const actualX = gx + (oh  - 0.5) * 2;
+        const actualZ = gz + (oh2 - 0.5) * 2;
+        const dx = position.current.x - actualX;
+        const dz = position.current.z - actualZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+
+        let hitRadius = 1.0;
+        let isLarge = false;
+        if (obsType === 'reef') hitRadius = 1.0;
+        if (obsType === 'coral') hitRadius = 0.6;
+        if (obsType === 'debris' || obsType === 'driftwood') hitRadius = 0.5;
+        if (obsType === 'rock') hitRadius = 0.7;
+        if (obsType.startsWith('structure')) { hitRadius = 2.5; isLarge = true; }
+        if (obsType === 'tall_coral' || obsType === 'tall_rock') { hitRadius = 2.0; isLarge = true; }
+
+        if (dist < hitRadius) {
+          const obsBaseY = getTerrainHeight(actualX, actualZ);
+          let obsHeight = 0; let obsColor = "#57534e";
+          if (obsType === 'coral') { obsHeight = 2.5; obsColor = "#f97316"; }
+          else if (obsType === 'reef') { obsHeight = 1.5; obsColor = "#44403c"; }
+          else if (obsType === 'tall_coral') { obsHeight = 2.5; obsColor = "#fb923c"; }
+          else if (obsType === 'tall_rock') { obsHeight = 2.5; obsColor = "#57534e"; }
+          else if (obsType === 'structure_shipwreck') { obsHeight = 6; obsColor = "#92400e"; }
+          else if (obsType === 'structure_lighthouse') { obsHeight = 12; obsColor = "#f8fafc"; }
+          else if (obsType === 'structure_fort') { obsHeight = 8; obsColor = "#57534e"; }
+          else if (obsType === 'debris' || obsType === 'driftwood') { obsHeight = 0.5; obsColor = "#78350f"; }
+          else if (obsType === 'rock') { obsHeight = 1.0; obsColor = "#57534e"; }
+
+          const topY = obsBaseY + obsHeight;
+          if (position.current.y >= topY - 0.5) {
+            platformHeight = Math.max(platformHeight, topY);
+          } else if (dist < hitRadius * 0.8) {
+            const currentObsKey = `${gx},${gz}`;
+            if (lastHitKey.current !== currentObsKey) {
+              audioService.playCrash();
+              shakeIntensity.current = 0.8;
+              debrisRef.current?.explode(actualX, actualZ, obsColor, obsHeight);
+              lastHitKey.current = currentObsKey;
+
+              const factor = isLarge ? 0.80 : 0.85;
+              velocity.current.z *= factor;
+              setRawSpeed(speed * factor);
+
+              if (isLarge) {
+                removeCoins(Math.floor(Math.random() * 2) + 2);
+              } else {
+                removeCoins(1);
+              }
+            }
+          }
+        }
       }
     }
 
@@ -340,6 +376,26 @@ export const Player: React.FC = () => {
     incrementScore(delta * velocity.current.z);
   });
 
+  // Hull shape: top-down profile, X=width, Y=length (→ World Z after rotation)
+  const hullShape = useMemo(() => {
+    const s = new Shape();
+    s.moveTo(0, 5.2);          // bow tip
+    s.lineTo(1.1, 3.8);
+    s.lineTo(2.0, 1.5);        // beam
+    s.lineTo(2.0, -1.5);
+    s.lineTo(1.6, -3.5);
+    s.lineTo(0.6, -4.5);       // stern
+    s.lineTo(-0.6, -4.5);
+    s.lineTo(-1.6, -3.5);
+    s.lineTo(-2.0, -1.5);
+    s.lineTo(-2.0, 1.5);
+    s.lineTo(-1.1, 3.8);
+    s.closePath();
+    return s;
+  }, []);
+  const hullGeo  = useMemo(() => new ExtrudeGeometry(hullShape, { depth: 2.2, bevelEnabled: false }), [hullShape]);
+  const deckGeo  = useMemo(() => new ShapeGeometry(hullShape), [hullShape]);
+
   return (
     <>
       <SplashParticles ref={splashRef} />
@@ -384,44 +440,43 @@ export const Player: React.FC = () => {
         <group ref={leftLegRef} position={[-0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
         <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
 
-        {/* 범선 모델 — 해수면에 떠 있는 큰 배 */}
+        {/* 범선 모델 */}
         <group position={[0, -LEG_Y + 1.4, 0]}>
-          {/* 선체 (hull) — 해수면 위아래 걸쳐 있음 */}
-          <mesh castShadow receiveShadow position={[0, -1.0, 0]}>
-            <boxGeometry args={[4.0, 2.2, 9.0]} />
+          {/* 선체 — ExtrudeGeometry로 앞뒤가 뾰족한 실제 선형 */}
+          {/* rotation=[π/2,0,0]: LocalY→WorldZ(선수미), LocalZ→World-Y(흘수) */}
+          <mesh geometry={hullGeo} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]} castShadow receiveShadow>
             <meshStandardMaterial color="#92400e" roughness={0.8} />
           </mesh>
-          {/* 갑판 (deck) */}
-          <mesh position={[0, 0.1, 0]} receiveShadow>
-            <boxGeometry args={[3.7, 0.2, 8.6]} />
+          {/* 갑판 — 선체 윤곽과 동일한 ShapeGeometry */}
+          <mesh geometry={deckGeo} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
             <meshStandardMaterial color="#a16207" roughness={0.9} />
           </mesh>
-          {/* 뱃머리 (bow) */}
-          <mesh position={[0, -0.1, 4.6]} rotation={[0.35, 0, 0]} castShadow>
-            <boxGeometry args={[3.4, 1.0, 1.0]} />
+          {/* 선미루 (고물 갑판) */}
+          <mesh position={[0, 0.6, -3.2]} castShadow>
+            <boxGeometry args={[2.8, 1.0, 2.2]} />
             <meshStandardMaterial color="#78350f" roughness={0.8} />
           </mesh>
-          {/* 선미 난간 (stern rail) */}
-          <mesh position={[0, 0.5, -4.1]} castShadow>
-            <boxGeometry args={[3.6, 0.8, 0.2]} />
-            <meshStandardMaterial color="#78350f" roughness={0.8} />
+          {/* 선수 경사 (bowsprit) */}
+          <mesh position={[0, 0.4, 5.8]} rotation={[-0.38, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.11, 3.2, 6]} />
+            <meshStandardMaterial color="#422006" roughness={0.9} />
           </mesh>
-          {/* 돛대 (mast) */}
+          {/* 돛대 */}
           <mesh position={[0, 6.5, 0.5]} castShadow>
             <cylinderGeometry args={[0.12, 0.15, 13, 8]} />
             <meshStandardMaterial color="#422006" roughness={0.9} />
           </mesh>
-          {/* 주 돛 (main sail) */}
+          {/* 주 돛 */}
           <mesh position={[0, 6.5, 0.5]} castShadow>
             <boxGeometry args={[4.5, 7.0, 0.06]} />
             <meshStandardMaterial color="#f8fafc" roughness={0.3} side={2} />
           </mesh>
-          {/* 돛 상단 가로대 (yard) */}
+          {/* 돛 가로대 */}
           <mesh position={[0, 10.2, 0.5]}>
             <boxGeometry args={[5.2, 0.18, 0.18]} />
             <meshStandardMaterial color="#422006" />
           </mesh>
-          {/* 해적 깃발 */}
+          {/* 깃발 */}
           <mesh position={[0.2, 13.2, 0.5]} castShadow>
             <boxGeometry args={[0.9, 0.55, 0.03]} />
             <meshStandardMaterial color="#dc2626" />
