@@ -16,6 +16,9 @@ const SplashParticles = forwardRef<SplashHandle, {}>((_, ref) => {
   const meshRef = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
   const particles = useMemo(() => new Array(count).fill(0).map(() => ({ pos: new Vector3(0, -100, 0), vel: new Vector3(0, 0, 0), life: 0, active: false })), []);
+  useEffect(() => {
+    if (meshRef.current) meshRef.current.instanceMatrix.setUsage(DynamicDrawUsage);
+  }, []);
   useImperativeHandle(ref, () => ({
     explode: (x: number, z: number) => {
       particles.forEach(p => {
@@ -38,7 +41,7 @@ const SplashParticles = forwardRef<SplashHandle, {}>((_, ref) => {
     if (activeCount > 0 || meshRef.current.count > 0) meshRef.current.instanceMatrix.needsUpdate = true;
   });
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} usage={DynamicDrawUsage}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <boxGeometry args={[0.15, 0.15, 0.15]} />
       <meshStandardMaterial color="#bfdbfe" emissive="#60a5fa" emissiveIntensity={0.8} roughness={0.1} />
     </instancedMesh>
@@ -54,6 +57,9 @@ const DebrisParticles = forwardRef<DebrisHandle, {}>((_, ref) => {
   const meshRef = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
   const particles = useMemo(() => new Array(count).fill(0).map(() => ({ pos: new Vector3(0, -100, 0), vel: new Vector3(0, 0, 0), rotVel: new Vector3(0, 0, 0), life: 0, active: false, scale: 1, color: new Color() })), []);
+  useEffect(() => {
+    if (meshRef.current) meshRef.current.instanceMatrix.setUsage(DynamicDrawUsage);
+  }, []);
   useImperativeHandle(ref, () => ({
     explode: (x: number, z: number, color: string, height: number) => {
       particles.forEach(p => {
@@ -82,7 +88,7 @@ const DebrisParticles = forwardRef<DebrisHandle, {}>((_, ref) => {
     if (activeCount > 0 || meshRef.current.count > 0) { meshRef.current.instanceMatrix.needsUpdate = true; if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true; }
   });
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} usage={DynamicDrawUsage}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <boxGeometry args={[0.8, 0.8, 0.8]} /> <meshStandardMaterial flatShading roughness={0.8} />
     </instancedMesh>
   );
@@ -118,7 +124,7 @@ export const Player: React.FC = () => {
   const targetX = useGameStore(state => state.targetX);
   const speed = useGameStore(state => state.speed);
   const setRawSpeed = useGameStore(state => state.setRawSpeed);
-  const cameraDragOffset = useGameStore(state => state.cameraDragOffset);
+  const cameraOffset = useGameStore(state => state.cameraOffset);
   const resetTrigger = useGameStore(state => state.resetTrigger);
   const knockbackForceY = useGameStore(state => state.knockbackForceY); 
   const resetKnockback = useGameStore(state => state.resetKnockback);
@@ -309,11 +315,11 @@ export const Player: React.FC = () => {
     if (shakeIntensity.current > 0) { shakeIntensity.current = MathUtils.lerp(shakeIntensity.current, 0, delta * 5); if (shakeIntensity.current < 0.01) shakeIntensity.current = 0; }
     const shakeX = (Math.random() - 0.5) * shakeIntensity.current;
     const shakeY = (Math.random() - 0.5) * shakeIntensity.current;
-    const targetLookX = -cameraDragOffset.x * Math.PI; 
-    const targetLookY = cameraDragOffset.y * Math.PI * 0.3;
+    const targetLookX = -cameraOffset.x * Math.PI;
+    const targetLookY = cameraOffset.y * Math.PI * 0.3;
     currentLookOffset.current.x = MathUtils.lerp(currentLookOffset.current.x, targetLookX, delta * 8);
     currentLookOffset.current.y = MathUtils.lerp(currentLookOffset.current.y, targetLookY, delta * 8);
-    const baseOffset = new Vector3(0, 4.5, -9.5);
+    const baseOffset = new Vector3(0, 4.5, -9.5).multiplyScalar(cameraOffset.zoom);
     baseOffset.applyAxisAngle(new Vector3(1, 0, 0), currentLookOffset.current.y);
     baseOffset.applyAxisAngle(new Vector3(0, 1, 0), currentLookOffset.current.x);
     const camTargetPos = new Vector3(position.current.x * 0.5 + shakeX, smoothedCameraY.current + shakeY, position.current.z).add(baseOffset);
