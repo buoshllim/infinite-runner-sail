@@ -920,7 +920,7 @@ const generateChunkData = (chunkIndex: number): ChunkData => {
     }
   }
 
-  const terrainGeo = new PlaneGeometry(150, WORLD_CONFIG.CHUNK_SIZE, 40, 15);
+  const terrainGeo = new PlaneGeometry(500, WORLD_CONFIG.CHUNK_SIZE + 0.2, 40, 15);
   terrainGeo.rotateX(-Math.PI / 2);
   const posAttr = terrainGeo.attributes.position;
   const centerZ = startZ + WORLD_CONFIG.CHUNK_SIZE / 2;
@@ -1025,6 +1025,16 @@ const WorldUpdater = () => {
 export const World = () => {
   return (
     <group>
+      {/* 해저 바닥 — 깊이감 표현 */}
+      <mesh position={[0, -14, 500]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[500, 2000]} />
+        <meshStandardMaterial color="#0c4a6e" />
+      </mesh>
+      {/* 중간 수심층 — 색 그라데이션 */}
+      <mesh position={[0, -9, 500]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[500, 2000]} />
+        <meshStandardMaterial color="#0369a1" transparent opacity={0.7} />
+      </mesh>
       <WorldUpdater />
     </group>
   );

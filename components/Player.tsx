@@ -1,11 +1,56 @@
 
 import React, { useRef, forwardRef, useImperativeHandle, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector3, Group, Mesh, MathUtils, Object3D, InstancedMesh, DynamicDrawUsage, Color, Shape, ExtrudeGeometry, ShapeGeometry } from 'three';
+import { useGLTF } from '@react-three/drei';
+import { Vector3, Group, Mesh, MathUtils, Object3D, InstancedMesh, DynamicDrawUsage, Color } from 'three';
 import { WORLD_CONFIG } from '../types';
 import { getTerrainHeight, getObstacleAt, getCloudInfo, getBridgeInfo, getRiverInfo, hash } from '../services/mathService';
 import { useGameStore } from '../store';
 import { audioService } from '../services/audioService';
+
+function ShipModel() {
+  const { scene } = useGLTF('/assets/pirate/ship-large.glb');
+  const shipRef = useRef<any>(null);
+  const sailsRef = useRef<any[]>([]);
+  const flagsRef = useRef<any[]>([]);
+
+  const cloned = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse((obj: any) => { if (obj.isMesh) obj.castShadow = true; });
+    return c;
+  }, [scene]);
+
+  useEffect(() => {
+    const sails: any[] = [];
+    const flags: any[] = [];
+    cloned.traverse((obj: any) => {
+      if (!obj.isMesh) return;
+      if (obj.name.startsWith('sail')) sails.push(obj);
+      if (obj.name.startsWith('flag')) flags.push(obj);
+    });
+    sailsRef.current = sails;
+    flagsRef.current = flags;
+  }, [cloned]);
+
+  useFrame(({ clock }) => {
+    if (!shipRef.current) return;
+    const t = clock.getElapsedTime();
+    // 파도 롤링 + 피칭만 (수직 이동 없음 — 수면 유지)
+    const roll  = Math.sin(t * 0.6) * 0.10 + Math.sin(t * 1.4 + 1.1) * 0.05 + Math.sin(t * 2.1 + 0.4) * 0.02;
+    const pitch = Math.sin(t * 0.45 + 0.8) * 0.08 + Math.sin(t * 1.0) * 0.03;
+    shipRef.current.rotation.z = roll;
+    shipRef.current.rotation.x = pitch;
+    sailsRef.current.forEach((sail, i) => {
+      sail.rotation.y = Math.sin(t * 1.2 + i * 0.5) * 0.18;
+    });
+    flagsRef.current.forEach((flag, i) => {
+      flag.rotation.y = Math.sin(t * 2.5 + i) * 0.15;
+    });
+  });
+
+  return <primitive ref={shipRef} object={cloned} scale={[0.8, 0.8, 0.8]} rotation={[0, 0, 0]} position={[0, 0, 0]} />;
+}
+useGLTF.preload('/assets/pirate/ship-large.glb');
 
 interface SplashHandle {
   explode: (x: number, z: number) => void;
@@ -382,111 +427,55 @@ export const Player: React.FC = () => {
     incrementScore(delta * velocity.current.z);
   });
 
-  // Hull shape: top-down profile, X=width, Y=length (→ World Z after rotation)
-  const hullShape = useMemo(() => {
-    const s = new Shape();
-    s.moveTo(0, 5.2);          // bow tip
-    s.lineTo(1.1, 3.8);
-    s.lineTo(2.0, 1.5);        // beam
-    s.lineTo(2.0, -1.5);
-    s.lineTo(1.6, -3.5);
-    s.lineTo(0.6, -4.5);       // stern
-    s.lineTo(-0.6, -4.5);
-    s.lineTo(-1.6, -3.5);
-    s.lineTo(-2.0, -1.5);
-    s.lineTo(-2.0, 1.5);
-    s.lineTo(-1.1, 3.8);
-    s.closePath();
-    return s;
-  }, []);
-  const hullGeo  = useMemo(() => new ExtrudeGeometry(hullShape, { depth: 2.2, bevelEnabled: false }), [hullShape]);
-  const deckGeo  = useMemo(() => new ShapeGeometry(hullShape), [hullShape]);
 
   return (
     <>
       <SplashParticles ref={splashRef} />
       <DebrisParticles ref={debrisRef} />
       <group ref={groupRef} position={[0, 5, 0]} name="PlayerGroup">
-        <group ref={headRef} position={[0, HEAD_Y, 0]}>
-            <mesh castShadow><boxGeometry args={[HEAD_SZ, HEAD_SZ, HEAD_SZ]} /><meshStandardMaterial color="#fbbf24" roughness={0.3} /></mesh>
-            {/* 선원 모자 (흰 밴드 + 네이비 몸통) */}
-            <group position={[0, HEAD_SZ / 2, 0]}>
-              <mesh position={[0, 0.08, 0]}>
-                <boxGeometry args={[HEAD_SZ + 0.02, 0.16, HEAD_SZ + 0.02]} />
-                <meshStandardMaterial color="#1e3a8a" />
-              </mesh>
-              <mesh position={[0, 0.16, 0]}>
-                <boxGeometry args={[HEAD_SZ - 0.04, 0.06, HEAD_SZ - 0.04]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-            </group>
-            <group position={[0, 0, HEAD_SZ/2 + 0.001]}>
-                <mesh position={[-0.08, 0.08, 0]} rotation={[0,0,-0.15]}><boxGeometry args={[0.08, 0.02, 0.01]} /><meshStandardMaterial color="#854d0e" /></mesh>
-                <mesh position={[0.08, 0.08, 0]} rotation={[0,0,0.15]}><boxGeometry args={[0.08, 0.02, 0.01]} /><meshStandardMaterial color="#854d0e" /></mesh>
-                <mesh position={[-0.07, 0.03, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 16]} /><meshStandardMaterial color="#000" /></mesh>
-                <mesh position={[0.07, 0.03, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 16]} /><meshStandardMaterial color="#000" /></mesh>
-                <mesh position={[-0.07, 0.035, 0.002]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.008, 0.008, 0.01, 8]} /><meshStandardMaterial color="#fff" /></mesh>
-                <mesh position={[0.07, 0.035, 0.002]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.008, 0.008, 0.01, 8]} /><meshStandardMaterial color="#fff" /></mesh>
-                <mesh position={[-0.12, -0.02, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 8]} /><meshStandardMaterial color="#fca5a5" transparent opacity={0.6} /></mesh>
-                <mesh position={[0.12, -0.02, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 8]} /><meshStandardMaterial color="#fca5a5" transparent opacity={0.6} /></mesh>
-                <group position={[0, -0.08, 0]}>
-                    <mesh rotation={[Math.PI/2, 0, 3 * Math.PI / 2]}><cylinderGeometry args={[0.08, 0.08, 0.01, 16, 1, false, 0, Math.PI]} /><meshStandardMaterial color="#000" /></mesh>
-                    <mesh position={[0, 0.035, 0.002]}><boxGeometry args={[0.12, 0.02, 0.01]} /><meshStandardMaterial color="#fff" /></mesh>
-                </group>
-            </group>
+        {/* 캐릭터 — 선미 조종키 위치로 이동 */}
+        <group position={[0, 1.9, -3.4]}>
+          <group ref={headRef} position={[0, HEAD_Y, 0]}>
+              <mesh castShadow><boxGeometry args={[HEAD_SZ, HEAD_SZ, HEAD_SZ]} /><meshStandardMaterial color="#fbbf24" roughness={0.3} /></mesh>
+              <group position={[0, HEAD_SZ / 2, 0]}>
+                <mesh position={[0, 0.08, 0]}>
+                  <boxGeometry args={[HEAD_SZ + 0.02, 0.16, HEAD_SZ + 0.02]} />
+                  <meshStandardMaterial color="#1e3a8a" />
+                </mesh>
+                <mesh position={[0, 0.16, 0]}>
+                  <boxGeometry args={[HEAD_SZ - 0.04, 0.06, HEAD_SZ - 0.04]} />
+                  <meshStandardMaterial color="#ffffff" />
+                </mesh>
+              </group>
+              <group position={[0, 0, HEAD_SZ/2 + 0.001]}>
+                  <mesh position={[-0.08, 0.08, 0]} rotation={[0,0,-0.15]}><boxGeometry args={[0.08, 0.02, 0.01]} /><meshStandardMaterial color="#854d0e" /></mesh>
+                  <mesh position={[0.08, 0.08, 0]} rotation={[0,0,0.15]}><boxGeometry args={[0.08, 0.02, 0.01]} /><meshStandardMaterial color="#854d0e" /></mesh>
+                  <mesh position={[-0.07, 0.03, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 16]} /><meshStandardMaterial color="#000" /></mesh>
+                  <mesh position={[0.07, 0.03, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 16]} /><meshStandardMaterial color="#000" /></mesh>
+                  <mesh position={[-0.07, 0.035, 0.002]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.008, 0.008, 0.01, 8]} /><meshStandardMaterial color="#fff" /></mesh>
+                  <mesh position={[0.07, 0.035, 0.002]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.008, 0.008, 0.01, 8]} /><meshStandardMaterial color="#fff" /></mesh>
+                  <mesh position={[-0.12, -0.02, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 8]} /><meshStandardMaterial color="#fca5a5" transparent opacity={0.6} /></mesh>
+                  <mesh position={[0.12, -0.02, 0]} rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.025, 0.025, 0.01, 8]} /><meshStandardMaterial color="#fca5a5" transparent opacity={0.6} /></mesh>
+                  <group position={[0, -0.08, 0]}>
+                      <mesh rotation={[Math.PI/2, 0, 3 * Math.PI / 2]}><cylinderGeometry args={[0.08, 0.08, 0.01, 16, 1, false, 0, Math.PI]} /><meshStandardMaterial color="#000" /></mesh>
+                      <mesh position={[0, 0.035, 0.002]}><boxGeometry args={[0.12, 0.02, 0.01]} /><meshStandardMaterial color="#fff" /></mesh>
+                  </group>
+              </group>
+          </group>
+          <mesh ref={bodyRef} position={[0, BODY_Y, 0]} castShadow><boxGeometry args={[BODY_W, BODY_H, BODY_D]} /><meshStandardMaterial color="#1e3a8a" roughness={0.5} /></mesh>
+          <mesh position={[0, BODY_Y + BODY_H / 2 - 0.05, BODY_D / 2 + 0.001]}>
+            <boxGeometry args={[BODY_W * 0.6, 0.15, 0.01]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          <group ref={leftArmRef} position={[-BODY_W/2 - LIMB_W/2, 0, 0]}><mesh position={[0, -LIMB_H/2 + 0.1, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#fbbf24" /></mesh></group>
+          <group ref={rightArmRef} position={[BODY_W/2 + LIMB_W/2, 0, 0]}><mesh position={[0, -LIMB_H/2 + 0.1, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#fbbf24" /></mesh></group>
+          <group ref={leftLegRef} position={[-0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
+          <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
         </group>
-        <mesh ref={bodyRef} position={[0, BODY_Y, 0]} castShadow><boxGeometry args={[BODY_W, BODY_H, BODY_D]} /><meshStandardMaterial color="#1e3a8a" roughness={0.5} /></mesh>
-        {/* 흰 V자 칼라 */}
-        <mesh position={[0, BODY_Y + BODY_H / 2 - 0.05, BODY_D / 2 + 0.001]}>
-          <boxGeometry args={[BODY_W * 0.6, 0.15, 0.01]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-        <group ref={leftArmRef} position={[-BODY_W/2 - LIMB_W/2, 0, 0]}><mesh position={[0, -LIMB_H/2 + 0.1, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#fbbf24" /></mesh></group>
-        <group ref={rightArmRef} position={[BODY_W/2 + LIMB_W/2, 0, 0]}><mesh position={[0, -LIMB_H/2 + 0.1, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#fbbf24" /></mesh></group>
-        <group ref={leftLegRef} position={[-0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
-        <group ref={rightLegRef} position={[0.12, 0, 0]}><mesh position={[0, -LIMB_H/2, 0]} castShadow><boxGeometry args={[LIMB_W, LIMB_H, LIMB_W]} /><meshStandardMaterial color="#f8fafc" /></mesh></group>
 
-        {/* 범선 모델 */}
-        <group position={[0, -LEG_Y + 1.4, 0]}>
-          {/* 선체 — ExtrudeGeometry로 앞뒤가 뾰족한 실제 선형 */}
-          {/* rotation=[π/2,0,0]: LocalY→WorldZ(선수미), LocalZ→World-Y(흘수) */}
-          <mesh geometry={hullGeo} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]} castShadow receiveShadow>
-            <meshStandardMaterial color="#92400e" roughness={0.8} />
-          </mesh>
-          {/* 갑판 — 선체 윤곽과 동일한 ShapeGeometry */}
-          <mesh geometry={deckGeo} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
-            <meshStandardMaterial color="#a16207" roughness={0.9} />
-          </mesh>
-          {/* 선미루 (고물 갑판) */}
-          <mesh position={[0, 0.6, -3.2]} castShadow>
-            <boxGeometry args={[2.8, 1.0, 2.2]} />
-            <meshStandardMaterial color="#78350f" roughness={0.8} />
-          </mesh>
-          {/* 선수 경사 (bowsprit) */}
-          <mesh position={[0, 0.4, 5.8]} rotation={[-0.38, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.07, 0.11, 3.2, 6]} />
-            <meshStandardMaterial color="#422006" roughness={0.9} />
-          </mesh>
-          {/* 돛대 */}
-          <mesh position={[0, 6.5, 0.5]} castShadow>
-            <cylinderGeometry args={[0.12, 0.15, 13, 8]} />
-            <meshStandardMaterial color="#422006" roughness={0.9} />
-          </mesh>
-          {/* 주 돛 */}
-          <mesh position={[0, 6.5, 0.5]} castShadow>
-            <boxGeometry args={[4.5, 7.0, 0.06]} />
-            <meshStandardMaterial color="#f8fafc" roughness={0.3} side={2} />
-          </mesh>
-          {/* 돛 가로대 */}
-          <mesh position={[0, 10.2, 0.5]}>
-            <boxGeometry args={[5.2, 0.18, 0.18]} />
-            <meshStandardMaterial color="#422006" />
-          </mesh>
-          {/* 깃발 */}
-          <mesh position={[0.2, 13.2, 0.5]} castShadow>
-            <boxGeometry args={[0.9, 0.55, 0.03]} />
-            <meshStandardMaterial color="#dc2626" />
-          </mesh>
+        {/* 범선 모델 — Kenney Pirate Kit */}
+        <group position={[0, -LEG_Y + 0.1, 0]}>
+          <ShipModel />
         </group>
       </group>
     </>
