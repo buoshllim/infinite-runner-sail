@@ -2,3 +2,13 @@ node_modules/
 dist/
 .DS_Store
 docs/
+# >>> ccgs-macsong
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.scratch/
+.claude/agent-memory/
+reports/
+# <<< ccgs-macsong
