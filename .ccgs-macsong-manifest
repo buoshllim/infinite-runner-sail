@@ -1,4 +1,4 @@
-# ccgs-macsong install — source e18e897 (/Volumes/OWC-P41/Source/claude-code-game-studios-macsong), engine web, 2026-09-27 02:30
+# ccgs-macsong install — source d49de64 (/Volumes/OWC-P41/Source/claude-code-game-studios-macsong), engine web, 2026-09-27 02:34
 # uninstall: /Volumes/OWC-P41/Source/claude-code-game-studios-macsong/macsong/install.sh "/Users/macsong/Projects/playground/infinite-runner-age-of-sail" --uninstall
 #dir	.claude
 #dir	.claude/agents
@@ -92,7 +92,6 @@
 #dir	design/registry
 #dir	docs/architecture
 #dir	docs/registry
-#dir	production
 #dir	production/session-state
 8e623d6b8ea3939c1381dc90a089709ac77d1c55	.claude/agents/accessibility-specialist.md
 fed3c2f395c9b73505fd064ea4889b53eb1aa00e	.claude/agents/ai-programmer.md
@@ -369,7 +368,7 @@ f155ddcdc30b0413b64340e061c4e71b49390b17	.claude/skills/ux-design/SKILL.md
 fdff6c6b5a9922ca080d88dec2442d5b27ab6812	.claude/skills/ux-review/SKILL.md
 4e4c5c1f0aea4e95260e4da32ec66ea4c01c807f	.claude/skills/vertical-slice/SKILL.md
 648db7cd39b29bd51090c70d7374f86caebb2b0e	.claude/statusline.sh
-9086bea873b6eabf7d08ac99bb34289da42fe4a9	CLAUDE.md
+0c91ffead0cded1e08fda6ed159e708c94a6809a	CLAUDE.md
 2ec7b506d52ab1d225d3bb5f08ca5a43760689a8	design/CLAUDE.md
 751daaed58b23c90ec03a2286e789e9f90096651	design/registry/entities.yaml
 c561962f86bdb3c3dd41cb8f3fe3d0a7cfc98b21	docs/architecture/tr-registry.yaml
