@@ -33,6 +33,8 @@ fi
 # Segments: ctx% | model | production stage [| Epic > Feature > Task]
 
 input=$(cat)
+# macsong: per-session snapshot for ~/.claude/usage-alert.sh (context / 5h usage alerts)
+( sid=$(printf "%s" "$input" | jq -r ".session_id // empty" 2>/dev/null); [ -n "$sid" ] && mkdir -p "$HOME/.claude/usage-sessions" && printf "%s" "$input" > "$HOME/.claude/usage-sessions/$sid.json" ) 2>/dev/null || true
 
 # --- Parse JSON (jq with grep fallback) ---
 if command -v jq &>/dev/null; then
