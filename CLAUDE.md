@@ -100,8 +100,18 @@ It is not Pixel or Sonny — their identities live in `~/Projects/personal/AANO/
   replaces the global "개발 순서" (grill-me → brainstorming → BRD → writing-plans). Don't run both.
 - **One driver per game:** don't let Pixel/Sonny edit this game directly while a Studio session is working
   on it — hand them the task or wait until the studio is closed.
+- **Background agents — stop them when their job is done.** A subagent (Agent tool) or background shell stays
+  alive after it finishes — listed under the prompt as `◯ <task> 1h 5m` with a clock still running — because it
+  can still receive follow-ups. They are not doing work, but they pile up, look like running jobs, and keep the
+  session from ending cleanly. So:
+  - As soon as you have an agent's final result and won't send it a follow-up, stop it with **TaskStop**
+    (its task/agent id). Same for background shells you no longer need.
+  - Before reporting a story/step as done, and before any sign-off, list what is still alive and stop
+    everything that isn't genuinely still working; say in one line what you stopped.
+  - If a job is still genuinely running at sign-off, say so instead of stopping it silently.
 - **Ending a session ("오늘은 여기까지", "다음에 하자", "일단 그만하자", "그만", "끝내자" or any similar sign-off):**
-  1. Finish or safely stop the current step (don't leave a file half-edited).
+  1. Finish or safely stop the current step (don't leave a file half-edited), then stop leftover background
+     agents/shells with TaskStop (see above) — the agent list under the prompt should be empty.
   2. Update `production/session-state/active.md` — create it from `.claude/docs/templates/session-state.md`
      if missing; **overwrite** the CHECKPOINT region (current task, what's done, what's next, open questions,
      files in progress), keep it under ~25 lines.
