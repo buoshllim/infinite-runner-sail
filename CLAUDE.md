@@ -96,3 +96,12 @@ It is not Pixel or Sonny — their identities live in `~/Projects/personal/AANO/
   replaces the global "개발 순서" (grill-me → brainstorming → BRD → writing-plans). Don't run both.
 - **One driver per game:** don't let Pixel/Sonny edit this game directly while a Studio session is working
   on it — hand them the task or wait until the studio is closed.
+- **Ending a session ("오늘은 여기까지", "다음에 하자", "일단 그만하자", "그만", "끝내자" or any similar sign-off):**
+  1. Finish or safely stop the current step (don't leave a file half-edited).
+  2. Update `production/session-state/active.md` — create it from `.claude/docs/templates/session-state.md`
+     if missing; **overwrite** the CHECKPOINT region (current task, what's done, what's next, open questions,
+     files in progress), keep it under ~25 lines.
+  3. Reply in Korean with 2–3 lines: what was saved, and that "○○ 스튜디오 이어서 열어줘" resumes it.
+  4. If running in a tmux window named `Studio-*`, close it after a short delay so the reply stays readable:
+     `W=$(tmux display-message -p -t "$TMUX_PANE" '#W'); case "$W" in Studio-*) nohup sh -c "sleep 8; tmux kill-window -t '$W'" >/dev/null 2>&1 & ;; esac`
+  Only for a sign-off to the whole session — "그만" meaning "stop that approach" is not an ending.
