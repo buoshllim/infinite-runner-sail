@@ -1,5 +1,5 @@
-# ccgs-macsong install — source d49de64 (/Volumes/OWC-P41/Source/claude-code-game-studios-macsong), engine web, 2026-09-27 02:34
-# uninstall: /Volumes/OWC-P41/Source/claude-code-game-studios-macsong/macsong-tools/install.sh "/Users/macsong/Projects/playground/infinite-runner-age-of-sail" --uninstall
+# ccgs-macsong install — source d49de64 (/Volumes/OWC-P41/Library/claude-code-game-studios-macsong), engine web, 2026-09-27 02:34
+# uninstall: /Volumes/OWC-P41/Library/claude-code-game-studios-macsong/macsong-tools/install.sh "/Users/macsong/Projects/playground/infinite-runner-age-of-sail" --uninstall
 #dir	.claude
 #dir	.claude/agents
 #dir	.claude/docs
