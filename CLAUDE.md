@@ -115,7 +115,9 @@ It is not Pixel or Sonny — their identities live in `~/Projects/personal/AANO/
   2. Update `production/session-state/active.md` — create it from `.claude/docs/templates/session-state.md`
      if missing; **overwrite** the CHECKPOINT region (current task, what's done, what's next, open questions,
      files in progress), keep it under ~25 lines.
-  3. Reply in Korean with 2–3 lines: what was saved, and that "○○ 스튜디오 이어서 열어줘" resumes it.
-  4. If running in a tmux window named `Studio-*`, close it after a short delay so the reply stays readable:
+  3. Reply in Korean with 2–3 lines: what was saved, and that "○○ 스튜디오 이어서 열어줘" resumes it. End with the
+     question **"창도 닫을까?"** — do not close anything yet.
+  4. Only if 송갱 says yes (닫아/응/그래…), close the tmux window after a short delay so the reply stays readable:
      `W=$(tmux display-message -p -t "$TMUX_PANE" '#W'); case "$W" in Studio-*) nohup sh -c "sleep 8; tmux kill-window -t '$W'" >/dev/null 2>&1 & ;; esac`
+     If the answer is no or doesn't come, leave the window open.
   Only for a sign-off to the whole session — "그만" meaning "stop that approach" is not an ending.
