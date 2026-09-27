@@ -96,4 +96,3 @@ It is not Pixel or Sonny — their identities live in `~/Projects/personal/AANO/
   replaces the global "개발 순서" (grill-me → brainstorming → BRD → writing-plans). Don't run both.
 - **One driver per game:** don't let Pixel/Sonny edit this game directly while a Studio session is working
   on it — hand them the task or wait until the studio is closed.
-- Every macsong change to upstream is listed in `macsong/MACSONG.md`.
