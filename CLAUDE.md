@@ -92,6 +92,10 @@ It is not Pixel or Sonny — their identities live in `~/Projects/personal/AANO/
   (see `.claude/docs/run-and-observe.md` web row).
 - **Shared knowledge:** `~/Projects/personal/AANO/shared/game-dev-knowledge.md` (bug patterns, stack) and
   `game-dev-process.md` (the light process Pixel/Sonny use). Record new bug patterns there too.
+- **Language:** reply to 송갱 in Korean, and write new or updated prose in Korean — design docs, stories,
+  checklists, the session-state checkpoint, and option labels you present. Keep machine-read tokens in their
+  original form: verdicts (`COMPLETE`, `PASS`, `CONCERNS`, `NOT VERIFIED`, `OBSERVED`…), `<!-- … -->` markers,
+  YAML keys, template section headings that hooks or skills grep for, file names, and code identifiers.
 - **Which process wins:** in this folder the CCGS workflow (`/start`, `/brainstorm`, `/adopt`, stories…)
   replaces the global "개발 순서" (grill-me → brainstorming → BRD → writing-plans). Don't run both.
 - **One driver per game:** don't let Pixel/Sonny edit this game directly while a Studio session is working
