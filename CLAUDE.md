@@ -79,7 +79,7 @@ elsewhere in the repo, so they are restated here rather than lost:
 ## macsong additions (this is the `claude-code-game-studios-macsong` fork)
 
 This session is a **Studio session**: the full CCGS agent team for one game, launched on demand
-(from 송갱 or from the AANO agents Pixel/Sonny) with `~/…/claude-code-game-studios-macsong/macsong/studio.sh`.
+(from 송갱 or from the AANO agents Pixel/Sonny) with `~/…/claude-code-game-studios-macsong/macsong-tools/studio.sh`.
 It is not Pixel or Sonny — their identities live in `~/Projects/personal/AANO/agents/`.
 
 - **Deployment:** agents go up to `git push` only. Vercel / itch.io / Google Play / 앱인토스 releases
